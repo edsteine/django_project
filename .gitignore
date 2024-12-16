@@ -1,0 +1,47 @@
+# Python bytecode files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# SQLite databases
+*.sqlite3
+
+# macOS system files
+.DS_Store
+.coverage
+coverage.xml
+# Virtual environment and dependency management directories
+.env/
+.venv/
+*.env
+
+
+# Distribution / build directories
+dist/
+build/
+*.egg-info/
+
+# IDE configuration directories (e.g., VSCode, PyCharm, etc.)
+.idea/
+.vscode/
+
+# Test and coverage files
+.tox/
+.nox/
+.coverage/
+.pytest_cache/
+
+# Log files
+*.log
+
+.git/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+staticfiles/
+
+# Temporary files
+*.bak
+*.swp

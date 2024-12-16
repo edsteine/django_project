@@ -1,0 +1,342 @@
+[build-system]
+requires = ["hatchling>=1.21.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ed_project"]
+
+[tool.hatch.build]
+sources = ["."]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[project]
+name = "ed_project"
+version = "0.1.0"
+description = "Project description"
+authors = [{ name = "Adil AJDAA", email = "a.ajdaa@outlook.com" }]
+requires-python = ">=3.8,<3.14"  # More flexible version range
+license = { text = "MIT" }
+dependencies = [
+    # Web Framework
+    "Django>=5.1.3,<5.2.0",
+    "djangorestframework>=3.15.2",
+    "djangorestframework-simplejwt>=5.3.1",
+
+    "pillow>=11.0.0",
+    # Security
+    "django-cryptography>=1.1",
+    "django-axes>=6.3.0",
+    "django-password-validators>=1.7.1",
+
+    # Database & Caching
+    "django-redis>=5.4.0",
+    "redis>=5.0.1",
+
+    # Environment & Configuration
+    "django-environ>=0.11.2",
+
+    # Utils
+    "python-slugify>=8.0.1",
+    "structlog>=24.4.0",
+    "typing-extensions>=4.10",
+    "phonenumbers>=8.13.52",
+
+    # Middleware
+    "django-cors-headers>=4.6.0",
+    "whitenoise>=6.6.0",
+    "pip>=24.3.1",
+    "pip-tools>=7.4.1",
+    "django-debug-toolbar>=4.4.6",
+    "django-extensions>=3.2.3",
+    "psycopg2>=2.9.10",
+    "pre-commit>=4.0.1",
+    # API Documentation
+    "drf-spectacular>=0.27.0", # OpenAPI 3 schema generation
+
+    # Performance
+    "django-silk>=5.0.0",     # Performance profiling
+    "django-cachalot>=2.7.0", # Database query caching
+
+    # Async support
+    "asgiref>=3.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    # Code Quality
+    "ruff>=0.4",
+    "black>=24.10.0",
+
+    # Type Checking
+    "mypy>=1.9",
+    "django-stubs>=5.1.1",
+    "djangorestframework-stubs>=3.15.1",
+
+    # Development Tools
+    "django-debug-toolbar>=4.4.6",
+    "django-extensions>=3.2.3",
+    "ipython>=8.18.0",
+    "rich>=13.7.0",
+
+    # Security Testing
+    "pip-audit>=2.7.3",
+    "bandit>=1.7.10",
+
+    # Git Hooks
+    "pre-commit>=4.0.1",
+
+    # Testing Framework
+    "pytest>=8.3.3",
+    "pytest-django>=4.9.0",
+    "pytest-mock>=3.14.0",
+    "pytest-cov>=6.0.0",
+
+    # Test Data
+    "factory-boy>=3.3.1",
+    "faker>=24.4.0",
+    "freezegun>=1.4.0",
+
+
+    "safety>=3.0.0",           # Dependency security checks
+    "django-defender>=0.9.0",  # Additional login protection
+]
+
+prod = [
+    # Server
+    "uvicorn>=0.29.0",
+    "gunicorn>=21.2.0",
+
+    # Monitoring
+    "sentry-sdk>=2.1.1",
+    "django-health-check>=3.18.1",
+    "django-prometheus>=2.3.1",
+    "psutil>=5.9.0",
+]
+
+[tool.ruff]
+line-length = 140
+target-version = "py313"
+exclude = ["*/migrations/*"]
+fix = true
+respect-gitignore = true
+src = ["ed_project"]
+
+[tool.ruff.lint]
+select = [
+    # Basic Code Validation
+    "F",     # pyflakes (basic code errors)
+    "E",     # pycodestyle errors (syntax and style)
+    "B",     # flake8-bugbear (advanced bug detection)
+
+    # # Import and Structure
+    "I",     # isort (import sorting)
+    "ICN",   # flake8-import-conventions
+    "TID",   # flake8-tidy-imports
+
+    # # Code Improvements
+    "UP",    # pyupgrade (modernize code)
+    "SIM",   # flake8-simplify
+    "C",     # mccabe complexity
+    "N",     # pep8-naming conventions
+
+    # # Security and Potential Errors
+    "A",     # flake8-builtins
+    "S",     # flake8-bandit (security)
+    "ERA",   # eradicate (remove commented code)
+
+    # # Type Checking and Annotations
+    # "ANN",   # flake8-annotations
+
+    # # Framework and Environment Specific
+    # "DJ",    # flake8-django
+    "ASYNC", # flake8-async
+
+    # # Specific Checks
+    # "ARG",   # flake8-unused-arguments
+    "T",     # flake8-print (discourage print statements)
+    "RSE",   # flake8-raise (exception handling)
+    "DTZ",   # flake8-datetimez
+    "PT",    # flake8-pytest-style
+
+    # # Formatting and Style
+    "Q",     # flake8-quotes
+    "COM",   # flake8-commas
+
+    # # Specific Rule Sets
+    "PL",    # pylint
+    # "RUF",   # ruff-specific rules
+
+    # # Documentation (typically last)
+    # "D",     # pydocstyle (docstring conventions)
+]
+ignore = [
+    # Basic Coding Conventions (Ignore)
+    # "N815",    # Variable should not be mixedCase
+    # "N818",    # Exception name should have Error suffix
+    # "Q000",    # Strings should use double quotes instead of single quotes for consistency
+
+    # # Import and Module Related
+    # "F401",    # Unused imports (useful to keep in __init__.py)
+    # "PLC0414", # Ignore duplicate import checks for __init__ files
+    # "F403",    # `from .base_config import *` used
+    # "F405",    # May be undefined or defined from star imports
+
+    # # Error and Exception Handling
+    # "B904",    # Raise exceptions with raise ... from err or raise ... from None
+    # "S101",    # Use of assert detected
+    # "B008",    # Do not perform function calls in argument defaults
+
+    # # Formatting and Style
+    "COM812",  # Missing trailing comma (conflicts with formatter)
+    # "E501",    # Line length handled by formatter
+    # "A003",    # Class attribute shadowing built-in
+
+    # # Argument and Function Related
+    # "ARG001",  # Unused function argument
+    # "ARG002",  # Unused method argument
+    # "ARG005",  # Unused lambda argument
+    # "PLR0913", # Allow more function arguments for Django views
+
+    # # Code Cleanliness
+    # "F841",    # Local variable assigned but never used
+    # "T201",    # print found
+    # "ERA001",  # Found commented-out code
+    # "PLR2004", # Magic value used in comparison
+    # "RUF012",  # Mutable class attributes should be annotated with typing.ClassVar
+
+    # # Documentation (Docstring) Related
+    # "D100",    # Missing docstring in public module
+    # "D101",    # Missing docstring in public class
+    # "D102",    # Missing docstring in public method
+    # "D103",    # Missing docstring in public function
+    # "D104",    # Missing docstring in public package
+    # "D105",    # Missing docstring in magic method
+    # "D106",    # Missing docstring in nested class
+
+    # # Type Annotation Related
+    # "ANN001",  # Missing type annotation for function argument
+    # "ANN002",  # Missing type annotation for `*args`
+    # "ANN003",  # Missing type annotation for `**kwargs`
+    # "ANN201",  # Missing return type annotation for public function
+    # "ANN202",  # Missing return type annotation for private function
+    # "ANN204",  # Missing return type annotation for special method
+    # "ANN206",  # Missing return type annotation for staticmethod
+
+    # # Docstring Formatting
+    # "D200",    # One-line docstring should fit on one line
+    # "D202",    # No blank lines allowed before class docstring
+    # "D203",    # One blank line required before class definitions (ignored when using black)
+    # "D205",    # 1 blank line required between summary line and description
+    # "D212",    # Multi-line docstring summary should start at the first line
+    # "D213",    # Multi-line docstring summary should start at the second line
+    # "D400",    # First line should end with a period
+    # "D401",    # First line should be in imperative mood
+    # "D413",    # Missing blank line after last section in docstring
+    # "D415",    # First line should end with a period, question mark, or exclamation point
+
+    # "DJ001",    # Avoid using `null=True` on string-based fields like CharField, as it is unnecessary and may lead to inconsistent data
+
+]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-wrap-aliases = true
+lines-between-types = 1
+known-third-party = ["django", "rest_framework"]
+
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "ARG"]
+"__init__.py" = ["F401"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "lf"
+
+
+[tool.mypy]
+python_version = "3.13"
+strict = false
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+disallow_untyped_calls = false
+disallow_untyped_defs = false
+follow_imports = "silent"
+warn_redundant_casts = false
+warn_unused_ignores = false
+disallow_any_generics = false
+no_implicit_reexport = false
+ignore_missing_imports = false
+warn_unused_configs = false
+check_untyped_defs = false
+warn_return_any = false
+show_error_codes = false
+
+
+[[tool.mypy.overrides]]
+module = [
+    # "environ",
+    "django.*",
+    "rest_framework.*"
+]
+ignore_missing_imports = false
+
+[tool.django-stubs]
+django_settings_module = "config_project.settings.dev_config"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config_project.settings.dev_config"
+python_files = ["test_*.py", "*_test.py", "testing/python/*.py"]
+addopts = [
+    "--cov=api",
+    # "--maxfail=2 --disable-warnings -q",
+    "--cov-report=term-missing",
+    "--cov-report=xml:coverage.xml",
+    "--no-cov-on-fail",
+    "--strict-markers",
+    "-ra",
+    # "--randomly-seed=1234",  # Randomize test order
+]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow",
+    "integration: marks tests as integration",
+    "docker: marks tests requiring docker",
+    "unit: marks unit tests",
+    "api: marks API tests",
+    "db: marks database tests",
+]
+requirements = [
+    "pytest-randomly",  # Randomize test order
+    "pytest-sugar",     # Improved test output
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning"
+]
+
+
+[tool.coverage.run]
+branch = true
+source = ["ed_project"]
+omit = ["tests/*", "*/migrations/*", "*/admin.py", "*/__init__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+[tool.bandit]
+exclude_dirs = ["tests", "migrations"]
+skips = ["B101"]  # Skip assert used as test statements

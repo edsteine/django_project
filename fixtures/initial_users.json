@@ -1,0 +1,30 @@
+[
+    {
+        "model": "auth.user",
+        "pk": 1,
+        "fields": {
+            "email": "user1@example.com",
+            "name": "John Doe",
+            "is_staff": true,
+            "is_active": true,
+            "date_joined": "2024-11-25T00:00:00Z",
+            "phone": "1234567890",
+            "profile_image": "profile_images/2024/11/user1.jpg",
+            "bio": "This is the bio of John Doe"
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 2,
+        "fields": {
+            "email": "user2@example.com",
+            "name": "Jane Smith",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2024-11-25T00:00:00Z",
+            "phone": "0987654321",
+            "profile_image": "profile_images/2024/11/user2.jpg",
+            "bio": "This is the bio of Jane Smith"
+        }
+    }
+]
