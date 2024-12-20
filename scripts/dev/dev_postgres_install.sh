@@ -100,6 +100,9 @@ install_postgresql_macos() {
 
     configure_postgres_path
     configure_postgres_admin
+    echo 'export PATH="/usr/local/opt/postgresql@15/bin:$PATH"' >> ~/.zshrc
+    source ~/.zshrc
+
 
     success "PostgreSQL ${PG_VERSION} installed and configured"
 }

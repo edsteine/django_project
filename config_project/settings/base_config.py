@@ -45,7 +45,7 @@ required_env_vars: list[str] = [
     "EMAIL_USE_TLS",
     "EMAIL_HOST_USER",
     "EMAIL_HOST_PASSWORD",
-    "CORS_ALLOWED_ORIGINS",
+    # "CORS_ALLOWED_ORIGINS",
 ]
 
 # Check for missing environment variables
@@ -80,7 +80,7 @@ EMAIL_PORT = env_variables("EMAIL_PORT")
 EMAIL_USE_TLS = env_variables("EMAIL_USE_TLS")
 EMAIL_HOST_USER = env_variables("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = env_variables("EMAIL_HOST_PASSWORD")
-CORS_ALLOWED_ORIGINS = env_variables.list("CORS_ALLOWED_ORIGINS")
+# CORS_ALLOWED_ORIGINS = env_variables.list("CORS_ALLOWED_ORIGINS")
 
 # Installed applications for the project
 INSTALLED_APPS = [

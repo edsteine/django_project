@@ -52,9 +52,9 @@ K8S_CONTEXT := dev-cluster
 MAKE_EXECUTABLE_SCRIPTS = \
 	scripts/dev/dev_database_create.sh \
 	scripts/dev/dev_database_delete.sh \
-	scripts/dev/dev_database_install.sh \
-	scripts/dev/dev_database_uninstall.sh \
-	scripts/dev/dev_database_start.sh \
+	scripts/dev/dev_postgres_install.sh \
+	scripts/dev/dev_postgres_uninstall.sh \
+	scripts/dev/dev_postgres_start.sh \
 	scripts/dev/dev_environment_install.sh \
 	scripts/dev/dev_environment_uninstall.sh \
 	scripts/dev/dev_environment_start.sh \
@@ -198,17 +198,17 @@ environment-start: setup-scripts-executable
 
 postgress-install: setup-scripts-executable
 	@echo "$(BLUE)🔧 Installing postgress...$(NC)"
-	./scripts/dev/dev_postgress_install.sh
+	./scripts/dev/dev_postgres_install.sh
 	@echo "$(GREEN)✅ postgress installed$(NC)"
 
 postgress-uninstall: setup-scripts-executable
 	@echo "$(BLUE)🗑️ Uninstalling postgress...$(NC)"
-	./scripts/dev/dev_postgress_uninstall.sh
+	./scripts/dev/dev_postgres_uninstall.sh
 	@echo "$(GREEN)✅ postgress uninstalled$(NC)"
 
 postgress-start: setup-scripts-executable
 	@echo "$(BLUE)🚀 Starting postgress...$(NC)"
-	./scripts/dev/dev_postgress_start.sh
+	./scripts/dev/dev_postgres_start.sh
 	@echo "$(GREEN)✅ postgress started$(NC)"
 
 
@@ -378,12 +378,10 @@ type-check:
 	@echo "$(GREEN)✅ Type checks complete$(NC)"
 
 # checkall: lint  security type-check
-checkall: lint  type-check
+checkall: lint  type-check security
 # Run all pre-commit hooks
 pre-commit:
 	pre-commit run --all-files
-	# pre-commit run ruff --all-files
-	# pre-commit run mypy --all-files
 
 .PHONY: commit-push
 # commit-push-reset:  install-dependencies-dev pre-commit
@@ -392,7 +390,9 @@ commit-push-reset-install:  install-dependencies-dev
 	git init
 	git remote get-url origin || git remote add origin https://github.com/edsteine/django_project.git
 	git branch -M main
-	git add . || true
+	# Add empty files or folders by ensuring .gitkeep or other placeholders are added
+	find . -type d -empty -exec touch {}/.gitkeep \;  # Add .gitkeep to empty folders
+	git add . || true  # Add all changes, including empty directories with .gitkeep
 	git commit -m "Commit changes" || true
 	@echo "$(GREEN)✅ Changes committed$(NC)"
 	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
@@ -403,12 +403,15 @@ commit-push-reset:
 	git init
 	git remote get-url origin || git remote add origin https://github.com/edsteine/django_project.git
 	git branch -M main
-	git add . || true
+	# Add empty files or folders by ensuring .gitkeep or other placeholders are added
+	find . -type d -empty -exec touch {}/.gitkeep \;  # Add .gitkeep to empty folders
+	git add . || true  # Add all changes, including empty directories with .gitkeep
 	git commit -m "Commit changes" || true
 	@echo "$(GREEN)✅ Changes committed$(NC)"
 	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
 	git push --force --set-upstream origin main || true
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
+
 
 commit-push:
 	@echo "$(BLUE)🎯 Committing changes...$(NC)"

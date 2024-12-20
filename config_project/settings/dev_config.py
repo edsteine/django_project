@@ -15,7 +15,7 @@ SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
 # CORS settings for development (allow local frontend)
-CORS_ALLOWED_ORIGINS = env_variables.list("CORS_ALLOWED_ORIGINS")  # noqa: F405
+# CORS_ALLOWED_ORIGINS = env_variables.list("CORS_ALLOWED_ORIGINS")
 
 # Extend JWT access token lifetime for development convenience
 SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"] = timedelta(hours=1)  # noqa: F405

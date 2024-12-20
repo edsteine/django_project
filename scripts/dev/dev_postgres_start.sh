@@ -59,7 +59,11 @@ check_and_start_postgres_macos() {
 
     if ! brew services list | grep "$service_name" | grep -q "started"; then
         log "Starting PostgreSQL ${PG_VERSION}..."
-        show_command "brew services start $service_name"
+
+        # Fix the ownership issue if necessary
+        # fix_postgres_ownership_macos
+
+        show_command "sudo brew services start $service_name"
         verify_postgres_connection
     else
         log "PostgreSQL ${PG_VERSION} is already running"
@@ -68,6 +72,31 @@ check_and_start_postgres_macos() {
 
     # Show database status
     show_command "psql -U postgres -c '\\l' || echo 'Could not list databases'"
+}
+fix_postgres_ownership_macos() {
+    local service_name="postgresql@${PG_VERSION}"
+    log "Fixing PostgreSQL ownership..."
+
+    # Stop any running services first
+    show_command "sudo brew services stop $service_name"
+
+    # Clean up system-level service files
+    show_command "sudo rm -f /Library/LaunchDaemons/homebrew.mxcl.$service_name.plist"
+    show_command "sudo brew services cleanup"
+
+    # Reset ownership for PostgreSQL directories
+    # show_command "sudo chown -R $(whoami) /usr/local/var/$service_name"
+    # show_command "sudo chown -R $(whoami) /usr/local/Cellar/$service_name"
+    # show_command "sudo chown -R $(whoami) /usr/local/opt/$service_name"
+
+    # Remove existing data directory if it's corrupted
+    # show_command "sudo rm -rf /usr/local/var/$service_name"
+
+    # Initialize new database cluster
+    # show_command "initdb --locale=C -E UTF-8 /usr/local/var/$service_name"
+
+    # Start service as user (not root)
+    show_command "sudo brew services start $service_name"
 }
 
 check_and_start_postgres_linux() {

@@ -34,13 +34,13 @@ install_system_dependencies() {
     log "Installing system dependencies..."
 
     if [[ "$(uname)" == "Darwin" ]]; then
-        show_command "brew update"
-        brew update 2>&1 || error "Failed to update Homebrew"
+        show_command "sudo brew update"
+        sudo brew update 2>&1 || error "Failed to update Homebrew"
 
-        show_command "brew install openssl readline sqlite3 xz zlib"
-        brew install openssl readline sqlite3 xz zlib 2>&1 || error "Failed to install brew packages"
+        show_command "sudo brew install openssl readline sqlite3 xz zlib"
+        sudo brew install openssl readline sqlite3 xz zlib 2>&1 || error "Failed to install brew packages"
     else
-        show_command "sudo apt-get update"
+        show_command "sudo sudo apt-get update"
         sudo apt-get update 2>&1 || error "Failed to update apt"
 
         show_command "sudo apt-get install -y build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev"
@@ -55,8 +55,8 @@ install_pyenv() {
     log "Installing pyenv..."
 
     if ! command -v pyenv &> /dev/null; then
-        show_command "curl https://pyenv.run | bash"
-        curl https://pyenv.run | bash 2>&1 || error "Failed to install pyenv"
+        show_command "sudo curl https://pyenv.run | bash"
+        sudo curl https://pyenv.run | bash 2>&1 || error "Failed to install pyenv"
 
         # Add pyenv to shell config
         {
@@ -75,8 +75,8 @@ install_pyenv() {
 
         success "Pyenv installed"
     else
-        show_command "brew upgrade pyenv"
-        brew upgrade pyenv 2>&1 || error "Failed to update pyenv"
+        show_command "sudo brew upgrade pyenv"
+        sudo brew upgrade pyenv 2>&1 || error "Failed to update pyenv"
         success "Pyenv updated"
     fi
 }
@@ -89,8 +89,8 @@ uninstall_python() {
 
     # Uninstall Python version
     if pyenv versions --bare | grep -q "^${PYTHON_VERSION}$"; then
-        show_command "pyenv uninstall -f ${PYTHON_VERSION}"
-        pyenv uninstall -f ${PYTHON_VERSION} 2>&1 || error "Failed to uninstall Python ${PYTHON_VERSION}"
+        show_command "sudo pyenv uninstall -f ${PYTHON_VERSION}"
+        sudo pyenv uninstall -f ${PYTHON_VERSION} 2>&1 || error "Failed to uninstall Python ${PYTHON_VERSION}"
         success "Uninstalled Python ${PYTHON_VERSION}"
     else
         error "Python ${PYTHON_VERSION} is not installed"
@@ -98,8 +98,8 @@ uninstall_python() {
 
     # Uninstall the virtualenv associated with the Python version
     if pyenv virtualenvs --bare | grep -q "^${PYENV_NAME}$"; then
-        show_command "pyenv uninstall -f ${PYENV_NAME}"
-        pyenv uninstall -f ${PYENV_NAME} 2>&1 || error "Failed to uninstall virtualenv ${PYENV_NAME}"
+        show_command "sudo pyenv uninstall -f ${PYENV_NAME}"
+        sudo pyenv uninstall -f ${PYENV_NAME} 2>&1 || error "Failed to uninstall virtualenv ${PYENV_NAME}"
         success "Uninstalled virtualenv ${PYENV_NAME}"
     else
         error "Virtualenv ${PYENV_NAME} is not installed"

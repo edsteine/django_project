@@ -44,7 +44,7 @@ USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # CORS configuration
-CORS_ALLOWED_ORIGINS = env_variables.list("CORS_ALLOWED_ORIGINS", default=[])  # noqa: F405
+# CORS_ALLOWED_ORIGINS = env_variables.list("CORS_ALLOWED_ORIGINS", default=[])
 CORS_ORIGIN_WHITELIST = env_variables.list("CORS_ORIGIN_WHITELIST", default=[])  # noqa: F405
 
 # Reduce JWT access token lifetime for security

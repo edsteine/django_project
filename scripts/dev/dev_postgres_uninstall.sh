@@ -43,17 +43,18 @@ uninstall_postgresql() {
 
     # Stop service
     log "Stopping PostgreSQL${version} service..."
-    show_command "brew services stop postgresql${version} || true"
+    show_command "sudo brew services stop postgresql${version} || true"
 
     # Uninstall PostgreSQL
     log "Uninstalling PostgreSQL${version} via Homebrew..."
-    show_command "brew uninstall postgresql${version} || true"
+    show_command "sudo brew uninstall postgresql${version} || true"
 
     # Remove data directories
     log "Removing PostgreSQL${version} data directories..."
-    show_command "rm -rf /usr/local/var/postgresql${version} || true"
-    show_command "rm -rf /usr/local/var/log/postgres${version} || true"
-    show_command "rm -rf /usr/local/share/postgresql${version} || true"
+    show_command "sudo rm -rf /usr/local/var/postgresql${version} || true"
+    show_command "sudo rm -rf /usr/local/var/log/postgres${version} || true"
+    show_command "sudo rm -rf /usr/local/share/postgresql${version} || true"
+    show_command "sudo rm -rf /usr/local/Cellar/postgresql${version} || true"
     show_command "sudo rm -rf /Library/PostgreSQL${version} || true"
 
     success "PostgreSQL${version} uninstalled"
@@ -61,7 +62,9 @@ uninstall_postgresql() {
 
 cleanup_brew() {
     log "Cleaning up Homebrew..."
-    show_command "brew cleanup"
+    show_command " brew cleanup"
+    show_command " sudo chown -R $(whoami) /usr/local/*"
+
 }
 
 cleanup_path() {
@@ -72,7 +75,7 @@ cleanup_path() {
     for file in "${files[@]}"; do
         if [ -f "$file" ]; then
             log "Checking $file..."
-            show_command "sed -i '' '/postgresql/d' $file || true"
+            show_command "sudo sed -i '' '/postgresql/d' $file || true"
         fi
     done
 }
@@ -102,8 +105,8 @@ main() {
     check_sudo
 
     # Confirm uninstallation
-    read -p "⚠️  This will completely remove PostgreSQL and all its data. Are you sure? (yes/no): " confirm
-    if [ "$confirm" != "yes" ]; then
+    read -p "⚠️  This will completely remove PostgreSQL and all its data. Are you sure? (y/n): " confirm
+    if [ "$confirm" != "y" ]; then
         log "Aborting uninstallation."
         exit 0
     fi
