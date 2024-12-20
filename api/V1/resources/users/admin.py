@@ -1,11 +1,19 @@
+from typing import Any
+
 from api.V1.resources.users.models import User
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 
-class CustomUserAdmin(UserAdmin):
-    model = User
-    list_display = (
+class CustomUserAdmin(UserAdmin):  # type: ignore
+    """Custom admin class for the User model.
+
+    Provides customized list display, filters, search fields,
+    ordering, and fieldsets for the User admin interface.
+    """
+
+    model = User  # Type hint the model attribute
+    list_display: tuple[str, ...] = (
         "id",
         "first_name",
         "last_name",
@@ -23,11 +31,16 @@ class CustomUserAdmin(UserAdmin):
         "created_at",
         "updated_at",
     )
-    # Remove 'status' and 'is_verified' from list_filter since they are properties
-    list_filter = ("is_active", "is_staff", "role")  # Only filter by actual fields
-    search_fields = ("first_name", "last_name", "email", "username", "phone")
-    ordering = ("-id",)  # Default ordering by ID in descending order
-    fieldsets = (
+    list_filter: tuple[str, ...] = ("is_active", "is_staff", "role")
+    search_fields: tuple[str, ...] = (
+        "first_name",
+        "last_name",
+        "email",
+        "username",
+        "phone",
+    )
+    ordering: tuple[str, ...] = ("-id",)
+    fieldsets: tuple[Any, ...] = (
         (
             None,
             {
@@ -47,7 +60,7 @@ class CustomUserAdmin(UserAdmin):
         ("Important dates", {"fields": ("last_login", "created_at", "updated_at")}),
         ("Additional Info", {"fields": ("birth_date", "image")}),
     )
-    add_fieldsets = (
+    add_fieldsets: tuple = (  # type: ignore
         (
             None,
             {

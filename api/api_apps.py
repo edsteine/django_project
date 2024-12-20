@@ -16,10 +16,10 @@ class ApiConfig(AppConfig):
     application-specific startup logic.
     """
 
-    name = "api"
-    verbose_name = "API"
+    name: str = "api"
+    verbose_name: str = "API"
 
-    def ready(self):
+    def ready(self) -> None:
         """Perform app-specific initialization when the app is ready.
 
         This method can be overridden to add any application-specific

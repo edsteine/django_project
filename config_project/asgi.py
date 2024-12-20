@@ -15,5 +15,6 @@ from django.core.asgi import get_asgi_application
 # Set the default settings module to 'prod_config' for the production environment.
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config_project.settings.prod_config")
 
-# Create and expose the ASGI application callable for asynchronous web servers to use.
-application = get_asgi_application()
+# Only create ASGI application callable in production
+if os.getenv("DJANGO_ENV", "production").lower() == "production":
+    application = get_asgi_application()

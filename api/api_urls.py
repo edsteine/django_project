@@ -1,13 +1,16 @@
 from django.urls import include, path
+from django.urls.resolvers import URLPattern, URLResolver
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from api.V1.resources.users.user_views import UserViewSet
 
-router = DefaultRouter()
+router: DefaultRouter = DefaultRouter()
 router.register(r"users", UserViewSet, basename="user")
 
-urlpatterns = [
+
+urlpatterns: list[URLPattern | URLResolver] = [
+    path("", include(router.urls)),  # User-related endpoints
     path("", include(router.urls)),  # User-related endpoints
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),  # Token refresh endpoint
     # Custom User URLs
@@ -37,21 +40,6 @@ urlpatterns = [
         "users/filter/",
         UserViewSet.as_view({"get": "filter_users"}),
         name="filter_users",
-    ),
-    path(
-        "users/bulk/create/",
-        UserViewSet.as_view({"post": "bulk_create"}),
-        name="bulk_create",
-    ),
-    path(
-        "users/bulk/update/",
-        UserViewSet.as_view({"put": "bulk_update"}),
-        name="bulk_update",
-    ),
-    path(
-        "users/bulk/delete/",
-        UserViewSet.as_view({"delete": "bulk_delete"}),
-        name="bulk_delete",
     ),
     path("users/login/", UserViewSet.as_view({"post": "login"}), name="login_user"),
     path("users/logout/", UserViewSet.as_view({"post": "logout"}), name="logout_user"),

@@ -16,4 +16,4 @@ DATABASES = {
 }
 
 # Logging setup for testing (usually DEBUG or INFO)
-LOGGING = get_logging_config(log_level="DEBUG")  # Use DEBUG level for testing # noqa: F405
+LOGGING = get_logging_config(log_level="DEBUG")  # noqa: F405

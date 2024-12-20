@@ -5,14 +5,15 @@ Defines encryption settings, schemes, and behavior, including the
 encryption key and the algorithm used.
 """
 
-import environ  # type: ignore
+from environ import Env
 
-# Initialize environment variables
-env = environ.Env()
+# from environ import Env  # type: ignore[import-untyped]
 
-# Read .env file
-environ.Env.read_env()
+# Initialize environment variables using environ
+env_variables = Env()
+Env.read_env(".env")
+
 
 # Type annotations for known types
-ENCRYPTION_KEY: str = env("ENCRYPTION_KEY")  # Type hinting the encryption key as a string
-ENCRYPTION_ALGORITHM: str = env("ENCRYPTION_ALGORITHM")  # Type hinting the algorithm as a string
+ENCRYPTION_KEY: str = env_variables("ENCRYPTION_KEY")
+ENCRYPTION_ALGORITHM: str = env_variables("ENCRYPTION_ALGORITHM")

@@ -1,9 +1,3 @@
-"""Base settings shared across all environments.
-
-Contains core Django configuration, middleware setup,
-installed apps, and common project-wide settings.
-"""
-
 import logging
 import os
 import sys
@@ -11,21 +5,29 @@ import sys
 from datetime import timedelta
 from pathlib import Path
 
-import environ  # type: ignore
+# Function to get the logging configuration
+from typing import Any
+
+# import environ
 import structlog
 
+from environ import Env
+
+# from environ import Env  # type: ignore[import-untyped]
+
 # Initialize environment variables using environ
-env_variables = environ.Env()
-environ.Env.read_env(".env")
+env_variables = Env()
+Env.read_env(".env")
 
 logger = logging.getLogger(__name__)
+
 # Base directory for project structure
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 LOGS_DIR = BASE_DIR / "logs"  # Directory for log files
 os.makedirs(LOGS_DIR, exist_ok=True)  # Create logs directory if it doesn't exist
 
 # Required environment variables for security and database configuration
-required_env_vars = [
+required_env_vars: list[str] = [
     "DJANGO_SECRET_KEY",
     "DB_NAME",
     "DB_USER",
@@ -47,14 +49,13 @@ required_env_vars = [
 ]
 
 # Check for missing environment variables
-missing_vars = []
+missing_vars: list[str] = []
 for var_name in required_env_vars:
     var_value = env_variables(var_name, default=None)
     if var_value is None or not var_value.strip():
         missing_vars.append(var_name)
 
 # If any required environment variables are missing, print and exit
-
 if missing_vars:
     error_message = "The following environment variables are missing or empty:\n"
     error_message += ", ".join(missing_vars)
@@ -98,6 +99,7 @@ INSTALLED_APPS = [
 # Custom user model for the project
 AUTH_USER_MODEL = "users.User"
 ROOT_URLCONF = "config_project.project_urls"  # Adjust to match your project's URL configuration path
+
 # Middleware configuration
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -117,6 +119,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
 }
+
 # JWT settings
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
@@ -134,6 +137,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / "assets",  # Example additional directory
 ]
+
 # Internationalization settings
 LANGUAGE_CODE = "en-us"
 USE_I18N = True
@@ -156,42 +160,29 @@ TEMPLATES = [
     },
 ]
 
+# Configure structlog to provide structured and human-readable logging
+log_renderer = structlog.dev.ConsoleRenderer() if DEBUG else structlog.processors.JSONRenderer()
 
-# Structlog logging configuration
-def configure_structlog():
-    """Configure structlog to provide structured and human-readable logging.
-    Based on DEBUG flag, it will log in human-readable format (console) for development
-    and in JSON format for production.
-    """
-    log_renderer = structlog.dev.ConsoleRenderer() if DEBUG else structlog.processors.JSONRenderer()
-
-    structlog.configure(
-        processors=[
-            structlog.contextvars.merge_contextvars,
-            structlog.stdlib.add_logger_name,
-            structlog.stdlib.add_log_level,
-            structlog.processors.TimeStamper(fmt="iso"),
-            structlog.processors.StackInfoRenderer(),
-            structlog.processors.format_exc_info,
-            log_renderer,  # Choose the renderer based on DEBUG
-        ],
-        context_class=dict,
-        logger_factory=structlog.stdlib.LoggerFactory(),
-        wrapper_class=structlog.stdlib.BoundLogger,
-        cache_logger_on_first_use=True,
-    )
+structlog.configure(
+    processors=[
+        structlog.contextvars.merge_contextvars,
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        log_renderer,  # Choose the renderer based on DEBUG
+    ],
+    context_class=dict,
+    logger_factory=structlog.stdlib.LoggerFactory(),
+    wrapper_class=structlog.stdlib.BoundLogger,
+    cache_logger_on_first_use=True,
+)
 
 
-# Call to configure logging on initialization
-configure_structlog()
-
-
-# Function to get the logging configuration
-def get_logging_config(log_level="INFO"):
-    """Structlog-based logging configuration.
-    This function sets up logging handlers for both console and file output.
-    The log format is chosen based on the DEBUG flag.
-    """
+# Update the type annotation to be more specific
+def get_logging_config(log_level: str = "INFO") -> dict[str, Any]:
+    """Logging configuration with correct type annotations."""
     log_renderer = structlog.dev.ConsoleRenderer() if DEBUG else structlog.processors.JSONRenderer()
 
     return {

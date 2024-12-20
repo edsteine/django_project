@@ -1,6 +1,11 @@
 import unittest
 
 
+# class TestPlaceholder(unittest.TestCase):
+#     def test_placeholder(self):
+#         assert True
+
+
 class TestPlaceholder(unittest.TestCase):
-    def test_placeholder(self):
-        assert True
+    def test_placeholder(self) -> None:
+        self.assertTrue(True)

@@ -5,7 +5,7 @@ Contains constants and configurations for the API behavior,
 such as versioning, host, and pagination settings.
 """
 
-API_VERSION = "v1"
-API_HOST = "api.example.com"
-DEFAULT_PAGE_SIZE = 20
-MAX_PAGE_SIZE = 100
+API_VERSION: str = "v1"
+API_HOST: str = "api.example.com"
+DEFAULT_PAGE_SIZE: int = 20
+MAX_PAGE_SIZE: int = 100

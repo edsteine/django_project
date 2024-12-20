@@ -119,12 +119,12 @@ install-dependencies-dev:
 	# $(PIP) freeze --no-deps > requirements-dev.txt|| true
 	$(PIP) freeze > requirements-dev.txt|| true
 	pip-sync requirements-dev.txt || true
-	@pre-commit clean || true
+	pre-commit clean || true
 	pre-commit install || true
 	pre-commit autoupdate || true
 	$(PIP) check || true
 	$(PIP) list --outdated || true
-	@rm requirements-dev.txt || true  # Clean up temporary file
+	rm requirements-dev.txt || true  # Clean up temporary file
 	@echo "$(GREEN)✅ Dependencies installed development$(NC)"
 
 install-dependencies-prod:
@@ -138,7 +138,7 @@ install-dependencies-prod:
 	pre-commit autoupdate || true
 	$(PIP) check || true
 	$(PIP) list --outdated || true
-	@rm requirements-prod.txt  || true # Clean up temporary file
+	rm requirements-prod.txt  || true # Clean up temporary file
 	@echo "$(GREEN)✅ Dependencies installed production$(NC)"
 
 update-dependencies-dev:
@@ -150,7 +150,7 @@ update-dependencies-dev:
 	pre-commit autoupdate || true
 	$(PIP) check || true
 	$(PIP) list --outdated || true
-	@rm requirements-dev.txt  || true # Clean up temporary file
+	rm requirements-dev.txt  || true # Clean up temporary file
 	@echo "$(GREEN)✅ Dependencies updated development$(NC)"
 
 update-dependencies-prod:
@@ -162,7 +162,7 @@ update-dependencies-prod:
 	pre-commit autoupdate || true
 	$(PIP) check || true
 	$(PIP) list --outdated || true
-	@rm requirements-prod.txt  || true # Clean up temporary file
+	rm requirements-prod.txt  || true # Clean up temporary file
 	@echo "$(GREEN)✅ Dependencies updated production$(NC)"
 
 
@@ -225,7 +225,7 @@ database-delete: setup-scripts-executable
 database-backup:
 	@echo "$(BLUE)💾 Creating database backup...$(NC)"
 	@mkdir -p $(BACKUP_DIR)
-	@$(PYTHON) manage.py dumpdata --indent 2 > $(BACKUP_DIR)/backup_$(CURRENT_TIME).json
+	$(PYTHON) manage.py dumpdata --indent 2 > $(BACKUP_DIR)/backup_$(CURRENT_TIME).json
 	@echo "$(GREEN)✅ Backup created at $(BACKUP_DIR)/backup_$(CURRENT_TIME).json$(NC)"
 
 database-restore:
@@ -256,29 +256,29 @@ database-seed:
 
 migrations:
 	@echo "$(BLUE)🔄 Creating database migrations...$(NC)"
-	@$(PYTHON) manage.py makemigrations || true
-	@$(PYTHON) manage.py flush || true
-	@$(PYTHON) manage.py makemigrations users || true
+	$(PYTHON) manage.py makemigrations || true
+	$(PYTHON) manage.py flush || true
+	$(PYTHON) manage.py makemigrations users || true
 	@echo "$(GREEN)✅ Migrations created$(NC)"
 
 migrate:
 	@echo "$(BLUE)🔄 Applying database migrations...$(NC)"
-	@$(PYTHON) manage.py migrate
+	$(PYTHON) manage.py migrate
 	@echo "$(GREEN)✅ Migrations applied$(NC)"
 collectstatic:
 	@echo "$(BLUE)🔄 Applying database migrations collectstatic...$(NC)"
-	@$(PYTHON) manage.py  collectstatic
+	$(PYTHON) manage.py  collectstatic
 	@echo "$(GREEN)✅ Migrations collectstatic applied$(NC)"
 
 
 superuser:
 	@echo "$(BLUE)👤 Creating superuser...$(NC)"
-	@$(PYTHON) manage.py createsuperuser
+	$(PYTHON) manage.py createsuperuser
 	@echo "$(GREEN)✅ Superuser created$(NC)"
 
 runserver:
 	@echo "$(BLUE)🚀 Starting development server...$(NC)"
-	@$(PYTHON) manage.py runserver
+	$(PYTHON) manage.py runserver
 
 clean:
 	@echo "$(BLUE)🧹 Cleaning project artifacts...$(NC)"
@@ -350,7 +350,7 @@ pytest-trace:
 	pytest --trace-config  || true
 
 
-lint:
+lint2:
 	@echo "$(BLUE)🔍 Running comprehensive code linting and fixing...$(NC)"
 	ruff check . --fix  || true
 	ruff check .  || true
@@ -358,6 +358,12 @@ lint:
 	black .  || true
 	ruff format .  || true
 	@echo "$(GREEN)✅ Code analysis complete$(NC)"
+lint:
+	@echo "$(BLUE)🔍 Running comprehensive code linting and fixing...$(NC)"
+	ruff check . --fix || true
+	ruff format . || true
+	@echo "$(GREEN)✅ Code analysis complete$(NC)"
+
 
 security:
 	@echo "$(BLUE)🔒 Running security checks...$(NC)"
@@ -371,7 +377,8 @@ type-check:
 	mypy .   || true
 	@echo "$(GREEN)✅ Type checks complete$(NC)"
 
-
+# checkall: lint  security type-check
+checkall: lint  type-check
 # Run all pre-commit hooks
 pre-commit:
 	pre-commit run --all-files
@@ -379,26 +386,37 @@ pre-commit:
 	# pre-commit run mypy --all-files
 
 .PHONY: commit-push
-# commit-push-reset:  install-dependencies-dev pre-commit lint  type-check security test coverage
-commit-push-reset:  install-dependencies-dev pre-commit lint  type-check
+# commit-push-reset:  install-dependencies-dev pre-commit
+commit-push-reset-install:  install-dependencies-dev
 	@echo "$(BLUE)🎯 Committing changes...$(NC)"
 	git init
-	git remote add origin https://github.com/edsteine/django_project.git
+	git remote get-url origin || git remote add origin https://github.com/edsteine/django_project.git
 	git branch -M main
-	@git add . || true
-	@git commit -m "Commit changes" || true
+	git add . || true
+	git commit -m "Commit changes" || true
 	@echo "$(GREEN)✅ Changes committed$(NC)"
 	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
-	@git push --force --set-upstream origin main || true
+	git push --force --set-upstream origin main || true
+	@echo "$(GREEN)✅ Changes pushed$(NC)"
+commit-push-reset:
+	@echo "$(BLUE)🎯 Committing changes...$(NC)"
+	git init
+	git remote get-url origin || git remote add origin https://github.com/edsteine/django_project.git
+	git branch -M main
+	git add . || true
+	git commit -m "Commit changes" || true
+	@echo "$(GREEN)✅ Changes committed$(NC)"
+	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
+	git push --force --set-upstream origin main || true
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
 
 commit-push:
 	@echo "$(BLUE)🎯 Committing changes...$(NC)"
-	@git add . || true
-	@git commit -m "Commit changes" || true
+	git add . || true
+	git commit -m "Commit changes" || true
 	@echo "$(GREEN)✅ Changes committed$(NC)"
 	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
-	@git push --force --set-upstream origin main || true
+	git push --force --set-upstream origin main || true
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
 
 

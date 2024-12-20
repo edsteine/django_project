@@ -10,15 +10,16 @@ class CustomExceptionError(Exception):
     """Custom exception for specific error cases.
 
     This exception can be raised to handle specific error conditions that
-    require more detailed or customized error messages. It extends the base
-    `Exception` class, adding a `message` attribute for additional context.
+    require more detailed or customized error messages.
 
     Attributes:
         message (str): The error message associated with the exception.
 
     """
 
-    def __init__(self, message):
+    message: str
+
+    def __init__(self, message: str) -> None:
         """Initializes the exception with a custom message.
 
         Args:

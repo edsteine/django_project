@@ -1,8 +1,4 @@
-"""Production-specific settings.
-
-Extends base_config.py with production-specific settings.
-Configures production-level security, database, and logging.
-"""
+from datetime import timedelta
 
 from .base_config import *  # noqa: F403
 
@@ -10,15 +6,16 @@ from .base_config import *  # noqa: F403
 DEBUG = False
 ALLOWED_HOSTS = env_variables.list("DJANGO_ALLOWED_HOSTS")  # noqa: F405
 SENTRY_DSN = env_variables("SENTRY_DSN")  # noqa: F405
+
 # Database configuration for production using environment variables
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": env_variables("PROD_DB_NAME"),  # noqa: F405
-        "USER": env_variables("PROD_DB_USER"),  # noqa: F405
-        "PASSWORD": env_variables("PROD_DB_PASSWORD"),  # noqa: F405
-        "HOST": env_variables("PROD_DB_HOST"),  # noqa: F405
-        "PORT": env_variables("PROD_DB_PORT"),  # noqa: F405
+        "NAME": env_variables("PROD_DB_NAME", default="prod_db"),  # noqa: F405
+        "USER": env_variables("PROD_DB_USER", default="prod_user"),  # noqa: F405
+        "PASSWORD": env_variables("PROD_DB_PASSWORD", default="prod_password"),  # noqa: F405
+        "HOST": env_variables("PROD_DB_HOST", default="localhost"),  # noqa: F405
+        "PORT": env_variables("PROD_DB_PORT", default="5432"),  # noqa: F405
         # Optional: Connection pooling and performance tuning
         "CONN_MAX_AGE": 600,  # Connection persistent for 10 minutes
         "OPTIONS": {
@@ -26,7 +23,6 @@ DATABASES = {
         },
     },
 }
-
 
 # Security settings for production
 SECURE_SSL_REDIRECT = True
@@ -59,9 +55,11 @@ LOGGING = get_logging_config(log_level="ERROR")  # noqa: F405
 
 # Email configuration
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = env_variables("PROD_EMAIL_HOST")  # noqa: F405
-EMAIL_PORT = env_variables("PROD_EMAIL_PORT")  # noqa: F405
-EMAIL_HOST_USER = env_variables("PROD_EMAIL_HOST_USER")  # noqa: F405
+EMAIL_HOST = env_variables("PROD_EMAIL_HOST", default="smtp.example.com")  # noqa: F405
+EMAIL_PORT = env_variables("PROD_EMAIL_PORT", default="587")  # noqa: F405
+EMAIL_HOST_USER = env_variables(  # noqa: F405
+    "PROD_EMAIL_HOST_USER", default="user@example.com"
+)
 EMAIL_HOST_PASSWORD = env_variables("PROD_EMAIL_HOST_PASSWORD")  # noqa: F405
 EMAIL_USE_TLS = True
 
@@ -69,7 +67,7 @@ EMAIL_USE_TLS = True
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": env_variables("REDIS_CACHE_URL"),  # noqa: F405
+        "LOCATION": env_variables("REDIS_CACHE_URL", default="redis://localhost:6379/1"),  # noqa: F405
         "OPTIONS": {
             "MAX_ENTRIES": 10000,
         },

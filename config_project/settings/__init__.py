@@ -1,7 +1,10 @@
-import environ  # type: ignore
+from environ import Env
 
-env_variables = environ.Env()
-environ.Env.read_env(".env")
+# from environ import Env  # type: ignore[import-untyped]
+
+env_variables = Env()
+Env.read_env(".env")
+# environ.Env.read_env()
 
 ENVIRONMENT = env_variables("DJANGO_ENVIRONMENT")  # Default to 'dev' if not set
 if ENVIRONMENT == "prod":

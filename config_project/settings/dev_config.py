@@ -1,20 +1,13 @@
-"""Development-specific settings.
-
-Extends base_config.py with development-specific settings.
-Configures development-level database, debugging, and logging.
-"""
+from datetime import timedelta
 
 from .base_config import *  # noqa: F403
 
 # Debug Toolbar Configuration
-INTERNAL_IPS = [
-    "127.0.0.1",
-    "localhost",
-]
+INTERNAL_IPS = env_variables.list("INTERNAL_IPS")  # noqa: F405
 
 # Debug settings for development
 DEBUG = True
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = env_variables.list("ALLOWED_HOSTS")  # noqa: F405
 
 # Disable SSL and secure cookies in development
 SECURE_SSL_REDIRECT = False
@@ -22,10 +15,7 @@ SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
 # CORS settings for development (allow local frontend)
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Example React dev server
-    "http://127.0.0.1:3000",
-]
+CORS_ALLOWED_ORIGINS = env_variables.list("CORS_ALLOWED_ORIGINS")  # noqa: F405
 
 # Extend JWT access token lifetime for development convenience
 SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"] = timedelta(hours=1)  # noqa: F405
@@ -51,11 +41,11 @@ MIDDLEWARE += [  # noqa: F405
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": DB_NAME,  # noqa: F405
-        "USER": DB_USER,  # noqa: F405
-        "PASSWORD": DB_PASSWORD,  # noqa: F405
-        "HOST": DB_HOST,  # noqa: F405
-        "PORT": DB_PORT,  # noqa: F405
+        "NAME": env_variables("DB_NAME", default="dev_db"),  # noqa: F405
+        "USER": env_variables("DB_USER", default="dev_user"),  # noqa: F405
+        "PASSWORD": env_variables("DB_PASSWORD", default="dev_password"),  # noqa: F405
+        "HOST": env_variables("DB_HOST", default="localhost"),  # noqa: F405
+        "PORT": env_variables("DB_PORT", default="5432"),  # noqa: F405
     },
 }
 
