@@ -311,7 +311,8 @@ exclude = ["tests", ",migrations"]
 
 [tool.django-stubs]
 django_settings_module = "config_project.settings.dev_config"
-
+[tool.pytest]
+DJANGO_SETTINGS_MODULE = "config_project.settings.dev_config"
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config_project.settings.dev_config"
 pythonpath = "."
