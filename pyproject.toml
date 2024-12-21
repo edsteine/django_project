@@ -324,6 +324,7 @@ python = "^3.13"
 pytest = "^8.3.4"
 pytest-randomly = "^3.16.0"
 pytest-sugar = "^1.0.0"
+django_find_project = false
 requirements = [
     "pytest-randomly", # Randomize test order
     "pytest-sugar",    # Improved test output
