@@ -1,33 +1,22 @@
 # =================================================================
 # Django Development Makefile 2024
-# Author: [Your Name]
-# Last Updated: 2024-11-23
+# Last Updated: 2024-12-21
 # =================================================================
 
-# =================================================================
-# Terminal Output Configuration
-# =================================================================
+# Terminal Colors and Emojis
 RED := \033[0;31m
 GREEN := \033[0;32m
 BLUE := \033[0;34m
 YELLOW := \033[1;33m
 CYAN := \033[0;36m
-NC := \033[0m  # No Color
+NC := \033[0m # No Color
 
-# =================================================================
 # Project Configuration
-# =================================================================
-PYTHON := python
 PROJECT_NAME := ed_project
-PIP := $(PYTHON) -m pip
 DJANGO_SETTINGS := config.settings
 COVERAGE_THRESHOLD := 80
 CURRENT_TIME := $(shell date "+%Y%m%d_%H%M%S")
-# Test path definitions
-UNIT_TESTS = tests/unit
-INTEGRATION_TESTS = tests/integration
-E2E_TESTS = tests/e2e
-ALL_TESTS = tests
+
 # Directory Configuration
 BACKUP_DIR := backups
 LOG_DIR := logs
@@ -35,6 +24,12 @@ STATIC_DIR := static
 MEDIA_DIR := media
 DOCS_DIR := docs
 FIXTURES_DIR := fixtures
+
+# Test Paths
+UNIT_TESTS := tests/unit
+INTEGRATION_TESTS := tests/integration
+E2E_TESTS := tests/e2e
+ALL_TESTS := tests
 
 # Docker Configuration
 DOCKER_COMPOSE := docker compose
@@ -46,20 +41,6 @@ DOCKER_TAG := latest
 K8S_NAMESPACE := development
 K8S_CONTEXT := dev-cluster
 
-# =================================================================
-# Script Paths
-# =================================================================
-MAKE_EXECUTABLE_SCRIPTS = \
-	scripts/dev/dev_database_create.sh \
-	scripts/dev/dev_database_delete.sh \
-	scripts/dev/dev_postgres_install.sh \
-	scripts/dev/dev_postgres_uninstall.sh \
-	scripts/dev/dev_postgres_start.sh \
-	scripts/dev/dev_environment_install.sh \
-	scripts/dev/dev_environment_uninstall.sh \
-	scripts/dev/dev_environment_start.sh \
-	scripts/deployment/*.sh \
-	scripts/monitoring/*.sh \
 
 # =================================================================
 # Help Command
@@ -69,264 +50,75 @@ help:
 	@echo "$(CYAN)Django Development Makefile 2024$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Core Commands:$(NC)"
-	@echo "  setup				 - Initialize complete development environment"
-	@echo "  install-dependencies  - Install all project dependencies"
-	@echo "  runserver			- Start Django development server"
-	@echo ""
-	@echo "$(YELLOW)Database Commands:$(NC)"
-	@echo "  database-install	 - Install and configure database"
-	@echo "  database-start	   - Start database server"
-	@echo "  database-backup	  - Create database backup"
-	@echo "  database-restore	 - Restore database from backup"
-	@echo "  database-migrate	 - Run database migrations"
-	@echo "  database-reset	   - Reset database to clean state"
-	@echo ""
+	@echo " setup - Complete project setup"
+	@echo " install - Install dependencies"
+	@echo " update - Update dependencies"
 	@echo "$(YELLOW)Development Commands:$(NC)"
-	@echo "  dev-setup		   - Set up development environment"
-	@echo "  dev-clean		   - Clean development environment"
-	@echo "  dev-reset		   - Reset development environment"
-	@echo ""
-	@echo "$(YELLOW)Testing Commands:$(NC)"
-	@echo "  test				- Run all tests"
-	@echo "  test-unit		   - Run unit tests"
-	@echo "  test-integration	- Run integration tests"
-	@echo "  test-e2e			- Run end-to-end tests"
-	@echo "  coverage			- Generate test coverage report"
-	@echo ""
+	@echo " dev - Setup development environment"
+	@echo " lint - Run all linters"
+	@echo " test - Run all tests"
+	@echo "$(YELLOW)Database Commands:$(NC)"
+	@echo " db-setup - Setup database"
+	@echo " db-migrate - Run migrations"
+	@echo " db-backup - Backup database"
+	@echo "$(YELLOW)Deployment Commands:$(NC)"
+	@echo " build - Build project"
+	@echo " deploy - Deploy project"
 
 # =================================================================
-# Environment Setup and Management
+# Core Installation & Setup
 # =================================================================
-.PHONY: setup-scripts-executable
-setup-scripts-executable:
-	@echo "$(BLUE)🔑 Making scripts executable...$(NC)"
-	@chmod +x scripts/**/*
-	@echo "$(GREEN)✅ Scripts are now executable$(NC)"
+.PHONY: install-dev update-dev check-tools
+
+# Check if required tools are installed
+check-tools:
+	@command -v poetry >/dev/null 2>&1 || { echo "$(RED)❌ Poetry is not installed$(NC)"; exit 1; }
+	@command -v pre-commit >/dev/null 2>&1 || { echo "$(RED)❌ pre-commit is not installed$(NC)"; exit 1; }
+	@echo "$(GREEN)✓ Required tools are installed$(NC)"
 
 
-# =================================================================
-# Virtual Environment and Dependencies
-# =================================================================
-.PHONY: install-dependencies-dev update-dependencies-dev install-dependencies-prod update-dependencies-prod
+# Install development environment
+install-dev: check-tools clean
+	@echo "$(BLUE)📦 Installing project...$(NC)"
 
+	poetry lock --no-update
+	poetry install --with dev --sync || { echo "$(RED)❌ Failed to install dependencies$(NC)"; exit 1; }
 
-install-dependencies-dev:
-	@echo "$(BLUE)📦 Installing project dependencies development...$(NC)"
-	git init   || true # Initialize git if not already initialized
-	$(PIP) install --upgrade pip pip-tools || true
-	# pip install . || true
-	$(PIP) install -e ".[dev]" || true
-	# $(PIP) freeze --no-deps > requirements-dev.txt|| true
-	$(PIP) freeze > requirements-dev.txt|| true
-	pip-sync requirements-dev.txt || true
-	pre-commit clean || true
-	pre-commit install || true
-	pre-commit autoupdate || true
-	$(PIP) check || true
-	$(PIP) list --outdated || true
-	rm requirements-dev.txt || true  # Clean up temporary file
-	@echo "$(GREEN)✅ Dependencies installed development$(NC)"
+	@echo "$(YELLOW)⚡ Setting up pre-commit hooks...$(NC)"
+	pre-commit install --install-hooks \
+		--hook-type pre-commit \
+		--hook-type pre-push \
+		--hook-type commit-msg || { echo "$(RED)❌ Failed to install pre-commit hooks$(NC)"; exit 1; }
 
-install-dependencies-prod:
-	@echo "$(BLUE)📦 Installing project dependencies production...$(NC)"
-	$(PIP) install --upgrade pip pip-tools || true
-	$(PIP) install -e ".[prod]" || true
-	$(PIP) freeze > requirements-prod.txt || true
-	pip-sync requirements-prod.txt || true
-	git init  || true # Initialize git if not already initialized
-	pre-commit install || true
-	pre-commit autoupdate || true
-	$(PIP) check || true
-	$(PIP) list --outdated || true
-	rm requirements-prod.txt  || true # Clean up temporary file
-	@echo "$(GREEN)✅ Dependencies installed production$(NC)"
+	@echo "$(YELLOW)🔍 Validating installation...$(NC)"
+	poetry check
+	poetry run pre-commit run --all-files || true
+	@echo "$(GREEN)✅ Development environment ready$(NC)"
 
-update-dependencies-dev:
-	@echo "$(BLUE)📦 Updating project dependencies development...$(NC)"
-	$(PIP) install --upgrade pip pip-tools || true
-	$(PIP) install --upgrade -e ".[dev]" || true
-	$(PIP) freeze > requirements-dev.txt || true
-	pip-sync requirements-dev.txt || true
-	pre-commit autoupdate || true
-	$(PIP) check || true
-	$(PIP) list --outdated || true
-	rm requirements-dev.txt  || true # Clean up temporary file
-	@echo "$(GREEN)✅ Dependencies updated development$(NC)"
+# Update dependencies and tools
+update-dev: check-tools
+	@echo "$(BLUE)🔄 Updating dependencies...$(NC)"
 
-update-dependencies-prod:
-	@echo "$(BLUE)📦 Updating project dependencies production...$(NC)"
-	$(PIP) install --upgrade pip pip-tools || true
-	$(PIP) install --upgrade -e ".[prod]" || true
-	$(PIP) freeze > requirements-prod.txt || true
-	pip-sync requirements-prod.txt || true
-	pre-commit autoupdate || true
-	$(PIP) check || true
-	$(PIP) list --outdated || true
-	rm requirements-prod.txt  || true # Clean up temporary file
-	@echo "$(GREEN)✅ Dependencies updated production$(NC)"
+	poetry lock --no-update
+	poetry check || { echo "$(RED)❌ Poetry check failed$(NC)"; exit 1; }
 
+	@echo "$(YELLOW)📝 Showing outdated packages...$(NC)"
+	poetry show --outdated
 
-install-dependencies-all:  install-dependencies-dev update-dependencies-dev
-	@echo "$(GREEN)✅ All dependencies install completed successfully$(NC)"
-# =================================================================
-# Evirement Management
-# =================================================================
-.PHONY: environment-install environment-uninstall environment-start
+	@echo "$(YELLOW)⬆️  Updating packages...$(NC)"
+	poetry update || { echo "$(RED)❌ Failed to update dependencies$(NC)"; exit 1; }
 
-environment-install: setup-scripts-executable
-	@echo "$(BLUE)🔧 Installing environment...$(NC)"
-	./scripts/dev/dev_environment_install.sh
-	@echo "$(GREEN)✅ environment installed$(NC)"
+	@echo "$(YELLOW)🔄 Updating pre-commit hooks...$(NC)"
+	pre-commit autoupdate
 
-environment-uninstall: setup-scripts-executable
-	@echo "$(BLUE)🗑️ Uninstalling environment...$(NC)"
-	./scripts/dev/dev_environment_uninstall.sh
-	@echo "$(GREEN)✅ environment uninstalled$(NC)"
+	@echo "$(GREEN)✅ Dependencies updated successfully$(NC)"
 
-environment-start: setup-scripts-executable
-	@echo "$(BLUE)🚀 Starting environment...$(NC)"
-	./scripts/dev/dev_environment_start.sh
-	@echo "$(GREEN)✅ environment started$(NC)"
-
-
-# =================================================================
-# Database Management
-# =================================================================
-.PHONY: postgress-install postgress-uninstall postgress-start postgress-stop \
-		database-backup database-restore database-reset database-seed \
-		database-create database-delete
-
-postgress-install: setup-scripts-executable
-	@echo "$(BLUE)🔧 Installing postgress...$(NC)"
-	./scripts/dev/dev_postgres_install.sh
-	@echo "$(GREEN)✅ postgress installed$(NC)"
-
-postgress-uninstall: setup-scripts-executable
-	@echo "$(BLUE)🗑️ Uninstalling postgress...$(NC)"
-	./scripts/dev/dev_postgres_uninstall.sh
-	@echo "$(GREEN)✅ postgress uninstalled$(NC)"
-
-postgress-start: setup-scripts-executable
-	@echo "$(BLUE)🚀 Starting postgress...$(NC)"
-	./scripts/dev/dev_postgres_start.sh
-	@echo "$(GREEN)✅ postgress started$(NC)"
-
-
-database-create: setup-scripts-executable
-	@echo "$(BLUE)🚀 Creating database...$(NC)"
-	./scripts/dev/dev_database_create.sh
-	@echo "$(GREEN)✅ Database created$(NC)"
-
-database-delete: setup-scripts-executable
-	@echo "$(BLUE)🚀 Starting database...$(NC)"
-	./scripts/dev/dev_database_delete.sh
-	@echo "$(GREEN)✅ Database started$(NC)"
-
-database-backup:
-	@echo "$(BLUE)💾 Creating database backup...$(NC)"
-	@mkdir -p $(BACKUP_DIR)
-	$(PYTHON) manage.py dumpdata --indent 2 > $(BACKUP_DIR)/backup_$(CURRENT_TIME).json
-	@echo "$(GREEN)✅ Backup created at $(BACKUP_DIR)/backup_$(CURRENT_TIME).json$(NC)"
-
-database-restore:
-	@echo "$(BLUE)📥 Restoring database from backup...$(NC)"
-	@if [ -z "$(BACKUP_FILE)" ]; then \
-		echo "$(RED)❌ Please specify BACKUP_FILE to restore from$(NC)"; \
-		exit 1; \
-	fi
-	@$(PYTHON) manage.py loaddata $(BACKUP_FILE)
-	@echo "$(GREEN)✅ Database restored from $(BACKUP_FILE)$(NC)"
-#  make database-restore BACKUP_FILE=backups/backup_20241125_192846.json
-database-reset: setup-scripts-executable
-	@echo "$(BLUE)🔄 Resetting database...$(NC)"
-	@$(PYTHON) manage.py flush --noinput || true
-	@$(PYTHON) manage.py migrate || true
-	@echo "$(GREEN)✅ Database reset complete$(NC)"
-
-
-database-seed:
-	@echo "$(BLUE)🌱 Seeding database...$(NC)"
-	@$(PYTHON) manage.py loaddata $(FIXTURES_DIR)/*.json
-	@echo "$(GREEN)✅ Database seeded$(NC)"
-
-# =================================================================
-# Django Management
-# =================================================================
-.PHONY: migrations migrate superuser static collectstatic runserver
-
-migrations:
-	@echo "$(BLUE)🔄 Creating database migrations...$(NC)"
-	$(PYTHON) manage.py makemigrations || true
-	$(PYTHON) manage.py flush || true
-	$(PYTHON) manage.py makemigrations users || true
-	@echo "$(GREEN)✅ Migrations created$(NC)"
-
-migrate:
-	@echo "$(BLUE)🔄 Applying database migrations...$(NC)"
-	$(PYTHON) manage.py migrate
-	@echo "$(GREEN)✅ Migrations applied$(NC)"
-collectstatic:
-	@echo "$(BLUE)🔄 Applying database migrations collectstatic...$(NC)"
-	$(PYTHON) manage.py  collectstatic
-	@echo "$(GREEN)✅ Migrations collectstatic applied$(NC)"
-
-
-superuser:
-	@echo "$(BLUE)👤 Creating superuser...$(NC)"
-	$(PYTHON) manage.py createsuperuser
-	@echo "$(GREEN)✅ Superuser created$(NC)"
-
-runserver:
-	@echo "$(BLUE)🚀 Starting development server...$(NC)"
-	$(PYTHON) manage.py runserver
-
-clean:
-	@echo "$(BLUE)🧹 Cleaning project artifacts...$(NC)"
-	find . -type d -name "__pycache__" -exec rm -rf {} +  || true
-	find . -type f -name "*.pyc" -delete  || true
-	find . -type f -name "*.DS_Store" -delete  || true
-	find . -type f -name "*.log" -delete  || true
-	find . -type f -name "*.pyo" -delete  || true
-	find . -type f -name "*.pyd" -delete  || true
-	find . -type f -name ".coverage" -delete  || true
-	find . -type f -name "coverage.xml" -delete || true
-	find . -type d -name "*.egg-info" -exec rm -rf {} + || true
-	find . -type d -name "*.egg" -exec rm -rf {} + || true
-	find . -type d -name ".pytest_cache" -exec rm -rf {} + || true
-	find . -type d -name ".mypy_cache" -exec rm -rf {} + || true
-	rm -rf build/ dist/ htmlcov/ .coverage staticfiles/ .ruff_cache/ backups/ || true
-	@echo "$(GREEN)✅ Clean complete$(NC)"
 
 # =================================================================
 # Testing and Quality Assurance
 # =================================================================
-.PHONY: test test-unit test-integration test-e2e coverage lint format security type-check check-all pre-commit
+.PHONY: test test-unit test-integration test-e2e pytest-trace coverage validate
 
-# Unit tests
-test-unit:
-	@echo "$(BLUE)🧪 Running unit tests...$(NC)"
-	pytest $(UNIT_TESTS) \
-		--cov=$(PROJECT_NAME) \
-		--cov-report=term-missing \
-		-v -m "not integration and not e2e"
-
-# Integration tests
-test-integration:
-	@echo "$(BLUE)🧪 Running integration tests...$(NC)"
-	pytest $(INTEGRATION_TESTS) \
-		--cov=$(PROJECT_NAME) \
-		--cov-report=term-missing \
-		-v -m "integration"
-
-# End-to-end tests
-test-e2e:
-	@echo "$(BLUE)🧪 Running end-to-end tests...$(NC)"
-	pytest $(E2E_TESTS) \
-		--cov=$(PROJECT_NAME) \
-		--cov-report=term-missing \
-		-v -m "e2e"
-
-# Full test suite with comprehensive coverage
 test:
 	@echo "$(BLUE)🧪 Running all tests...$(NC)"
 	pytest \
@@ -337,99 +129,320 @@ test:
 		--cov-fail-under=$(COVERAGE_THRESHOLD) \
 		$(ALL_TESTS)
 	@echo "$(GREEN)✅ All tests complete$(NC)"
-# Coverage report generation
+
+test-unit:
+	@echo "$(BLUE)🧪 Running unit tests...$(NC)"
+	pytest $(UNIT_TESTS) \
+		--cov=$(PROJECT_NAME) \
+		--cov-report=term-missing \
+		-v -m "not integration and not e2e"
+
+test-integration:
+	@echo "$(BLUE)🧪 Running integration tests...$(NC)"
+	pytest $(INTEGRATION_TESTS) \
+		--cov=$(PROJECT_NAME) \
+		--cov-report=term-missing \
+		-v -m "integration"
+
+test-e2e:
+	@echo "$(BLUE)🧪 Running end-to-end tests...$(NC)"
+	pytest $(E2E_TESTS) \
+		--cov=$(PROJECT_NAME) \
+		--cov-report=term-missing \
+		-v -m "e2e"
+
+pytest-trace:
+	pytest --trace-config
+
 coverage: test
 	@echo "$(BLUE)📊 Generating coverage reports...$(NC)"
-	coverage combine  || true
-	coverage report  || true
-	coverage html  || true
-	@echo "$(GREEN)✅ Coverage reports generated in htmlcov/$(NC)"
+	coverage combine
+	coverage report
+	coverage html
+	@echo "$(GREEN)✅ Coverage reports generated$(NC)"
 
-# Pytest configuration tracing
-pytest-trace:
-	pytest --trace-config  || true
+validate:
+	@echo "$(BLUE)🔍 Validating development environment...$(NC)"
+	poetry check
+	poetry run pytest --version >/dev/null 2>&1 || echo "$(YELLOW)⚠️  pytest not installed$(NC)"
+	poetry run mypy --version >/dev/null 2>&1 || echo "$(YELLOW)⚠️  mypy not installed$(NC)"
+	poetry run ruff --version >/dev/null 2>&1 || echo "$(YELLOW)⚠️  ruff not installed$(NC)"
+	pre-commit run --all-files || true
+	@echo "$(GREEN)✅ Validation complete$(NC)"
+# =================================================================
+# Quality Assurance
+# =================================================================
+.PHONY: lint security  type-check vulture-check security
 
-
-lint2:
-	@echo "$(BLUE)🔍 Running comprehensive code linting and fixing...$(NC)"
-	ruff check . --fix  || true
-	ruff check .  || true
-	black --check .  || true
-	black .  || true
-	ruff format .  || true
-	@echo "$(GREEN)✅ Code analysis complete$(NC)"
+# Linting and formatting
 lint:
-	@echo "$(BLUE)🔍 Running comprehensive code linting and fixing...$(NC)"
-	ruff check . --fix || true
-	ruff format . || true
-	@echo "$(GREEN)✅ Code analysis complete$(NC)"
-
-
-security:
-	@echo "$(BLUE)🔒 Running security checks...$(NC)"
-	bandit -r .  || true
-	pip-audit  --ignore ed_project  || true
-	@echo "$(GREEN)✅ Security checks complete$(NC)"
-
+	@echo "$(BLUE)📝 Formatting code...$(NC)"
+	poetry run ruff format . || { echo "$(RED)❌ Formatting failed$(NC)"; exit 1; }
+	@echo "$(GREEN)✓ Formatting complete$(NC)"
+	@echo "$(BLUE)🔍 Running linters...$(NC)"
+	poetry run ruff check . --fix || { echo "$(RED)❌ Ruff check failed$(NC)"; exit 1; }
+	@echo "$(GREEN)✓ Lint complete$(NC)"
 
 type-check:
-	@echo "$(BLUE)📝 Running type checks...$(NC)"
-	mypy .   || true
-	@echo "$(GREEN)✅ Type checks complete$(NC)"
+	@echo "$(BLUE)📋 Running type checks...$(NC)"
+	poetry run mypy . || { echo "$(RED)❌ Type checking failed$(NC)"; exit 1; }
+	@echo "$(GREEN)✓ Type checking complete$(NC)"
 
-# checkall: lint  security type-check
-checkall: lint  type-check security
-# Run all pre-commit hooks
-pre-commit:
-	pre-commit run --all-files
 
+# Security checks
+security:
+	@echo "$(BLUE)🔒 Running security checks...$(NC)"
+
+	@echo "$(YELLOW)Running Bandit security checks...$(NC)"
+	poetry run bandit -r . || { echo "$(RED)❌ Bandit security check failed$(NC)"; exit 1; }
+
+	@echo "$(YELLOW)Running dependency audit...$(NC)"
+	poetry run pip-audit --ignore ed_project || { echo "$(YELLOW)⚠️  Security vulnerabilities found$(NC)"; }
+
+	@echo "$(GREEN)✅ Security checks complete$(NC)"
+
+vulture-check:
+	@echo "$(BLUE)🔒 Running security checks...$(NC)"
+	poetry run vulture  || { echo "\033[0;31m❌ Vulture check failed\033[0m"; exit 1; }
+
+
+
+# =================================================================
+# Django Commands
+# =================================================================
+.PHONY: runserver shell collectstatic superuser db-status
+
+status:
+	@echo "$(BLUE)📊 Checking migration status...$(NC)"
+	poetry run python manage.py showmigrations || { echo "$(RED)❌ Failed to show migrations$(NC)"; exit 1; }
+	@echo "$(GREEN)✓ Migration status check complete$(NC)"
+
+migrate:
+	@echo "$(BLUE)🔄 Running database migrations...$(NC)"
+
+	@echo "$(YELLOW)Making migrations...$(NC)"
+	poetry run python manage.py makemigrations || { echo "$(RED)❌ Failed to make migrations$(NC)"; exit 1; }
+
+	@echo "$(YELLOW)Applying migrations...$(NC)"
+	poetry run python manage.py migrate || { echo "$(RED)❌ Failed to apply migrations$(NC)"; exit 1; }
+
+	poetry run python manage.py flush --noinput
+
+	poetry run python manage.py makemigrations users
+	@echo "$(GREEN)✅ Migrations complete$(NC)"
+
+superuser:
+	@echo "$(BLUE)👤 Creating superuser...$(NC)"
+	poetry run python manage.py createsuperuser
+	@echo "$(GREEN)✅ Superuser created$(NC)"
+
+runserver:
+	@echo "$(BLUE)🚀 Starting development server...$(NC)"
+	poetry run python manage.py runserver
+
+shell:
+	@echo "$(BLUE)🐚 Starting Django shell...$(NC)"
+	poetry run python manage.py shell_plus
+
+collectstatic:
+	@echo "$(BLUE)📦 Collecting static files...$(NC)"
+	poetry run python manage.py collectstatic --noinput
+
+
+db-backup:
+	@echo "$(BLUE)💾 Creating database backup...$(NC)"
+	mkdir -p $(BACKUP_DIR)
+	poetry run python manage.py dumpdata --indent 2 > $(BACKUP_DIR)/backup_$(CURRENT_TIME).json
+	@echo "$(GREEN)✅ Backup created$(NC)"
+db-restore:
+	@echo "$(BLUE)📥 Restoring database...$(NC)"
+	@if [ -z "$(BACKUP_FILE)" ]; then \
+		echo "$(RED)❌ Please specify BACKUP_FILE to restore from$(NC)"; \
+		exit 1; \
+	fi
+	poetry run python manage.py loaddata $(BACKUP_FILE)
+	@echo "$(GREEN)✅ Database restored$(NC)"
+
+db-seed:
+	@echo "$(BLUE)🌱 Seeding database...$(NC)"
+	poetry run python manage.py loaddata $(FIXTURES_DIR)/*.json
+	@echo "$(GREEN)✅ Database seeded$(NC)"
+
+cache-clear:
+	@echo "$(BLUE)🗑️ Clearing cache...$(NC)"
+	poetry run python manage.py clear_cache
+
+
+
+# =================================================================
+# Evirement Management
+# =================================================================
+.PHONY: environment-install environment-uninstall environment-start
+
+environment-install:
+	@echo "$(BLUE)🔧 Installing environment...$(NC)"
+	chmod +x ./scripts/dev/dev_environment_install.sh
+	./scripts/dev/dev_environment_install.sh
+	@echo "$(GREEN)✅ environment installed$(NC)"
+
+environment-uninstall: clean
+	@echo "$(BLUE)🗑️ Uninstalling environment...$(NC)"
+	chmod +x ./scripts/dev/dev_environment_uninstall.sh
+	./scripts/dev/dev_environment_uninstall.sh
+	@echo "$(GREEN)✅ environment uninstalled$(NC)"
+
+environment-start:
+	@echo "$(BLUE)🚀 Starting environment...$(NC)"
+	chmod +x ./scripts/dev/dev_environment_start.sh
+	./scripts/dev/dev_environment_start.sh
+	@echo "$(GREEN)✅ environment started$(NC)"
+
+# =================================================================
+# Database Management
+# =================================================================
+.PHONY: postgress-install postgress-uninstall postgress-start db-reset
+
+postgress-install:
+	@echo "$(BLUE)🔧 Installing postgress...$(NC)"
+	chmod +x ./scripts/dev/dev_postgres_install.sh
+	./scripts/dev/dev_postgres_install.sh
+	@echo "$(GREEN)✅ postgress installed$(NC)"
+
+postgress-uninstall: clean
+	@echo "$(BLUE)🗑️ Uninstalling postgress...$(NC)"
+	chmod +x ./scripts/dev/dev_postgres_uninstall.sh
+	./scripts/dev/dev_postgres_uninstall.sh
+	@echo "$(GREEN)✅ postgress uninstalled$(NC)"
+
+postgress-start:
+	@echo "$(BLUE)🚀 Starting postgress...$(NC)"
+	chmod +x ./scripts/dev/dev_postgres_start.sh
+	./scripts/dev/dev_postgres_start.sh
+	@echo "$(GREEN)✅ postgress started$(NC)"
+
+
+db-reset: clean
+	@echo "$(BLUE)🔄 Resetting database...$(NC)"
+	chmod +x ./scripts/dev/dev_database_create.sh
+	chmod +x ./scripts/dev/dev_database_create.sh
+	./scripts/dev/dev_database_delete.sh
+	./scripts/dev/dev_database_create.sh
+	migrate
+	@echo "$(GREEN)✅ Database reset complete$(NC)"
+
+
+# =================================================================
+# Git Commands
+# =================================================================
 .PHONY: commit-push
-# commit-push-reset:  install-dependencies-dev pre-commit
-commit-push-reset-install:  install-dependencies-dev
+
+
+pre-commit-check: clean
+	@echo "$(BLUE)🔄 Running pre-commit checks...$(NC)"
+	poetry lock --no-update
+	poetry run pre-commit run --all-files || { echo "$(YELLOW)⚠️  Pre-commit checks found issues$(NC)"; }
+	@echo "$(GREEN)✓ Pre-commit checks complete$(NC)"
+
+commit-push-reset-install:clean install-dev
 	@echo "$(BLUE)🎯 Committing changes...$(NC)"
 	git init
 	git remote get-url origin || git remote add origin https://github.com/edsteine/django_project.git
 	git branch -M main
 	# Add empty files or folders by ensuring .gitkeep or other placeholders are added
-	find . -type d -empty -exec touch {}/.gitkeep \;  # Add .gitkeep to empty folders
-	git add . || true  # Add all changes, including empty directories with .gitkeep
-	git commit -m "Commit changes" || true
+	find . -type d -empty -exec touch {}/.gitkeep \; # Add .gitkeep to empty folders
+	git add . # Add all changes, including empty directories with .gitkeep
+	git commit -m "Update: $(shell date '+%Y-%m-%d %H:%M:%S')"
 	@echo "$(GREEN)✅ Changes committed$(NC)"
 	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
-	git push --force --set-upstream origin main || true
+	git push --force --set-upstream origin main
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
+
 commit-push-reset:
 	@echo "$(BLUE)🎯 Committing changes...$(NC)"
 	git init
 	git remote get-url origin || git remote add origin https://github.com/edsteine/django_project.git
 	git branch -M main
 	# Add empty files or folders by ensuring .gitkeep or other placeholders are added
-	find . -type d -empty -exec touch {}/.gitkeep \;  # Add .gitkeep to empty folders
-	git add . || true  # Add all changes, including empty directories with .gitkeep
-	git commit -m "Commit changes" || true
+	find . -type d -empty -exec touch {}/.gitkeep \; # Add .gitkeep to empty folders
+	git add . # Add all changes, including empty directories with .gitkeep
+	git commit -m "Update: $(shell date '+%Y-%m-%d %H:%M:%S')"
 	@echo "$(GREEN)✅ Changes committed$(NC)"
 	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
-	git push --force --set-upstream origin main || true
+	git push --force --set-upstream origin main
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
-
 
 commit-push:
-	@echo "$(BLUE)🎯 Committing changes...$(NC)"
-	git add . || true
-	git commit -m "Commit changes" || true
+	@echo "$(BLUE)📝 Committing and pushing changes...$(NC)"
+	git add .
+	git commit -m "Update: $(shell date '+%Y-%m-%d %H:%M:%S')"
 	@echo "$(GREEN)✅ Changes committed$(NC)"
 	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
-	git push --force --set-upstream origin main || true
+	git push --force --set-upstream origin main
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
 
 
-
-
-
-check-all: lint type-check security test
-	@echo "$(GREEN)✅ All quality checks completed successfully$(NC)"
+clean:
+	@echo "$(BLUE)🧹 Cleaning project...$(NC)"
+	find . -type d -name "__pycache__" -exec rm -rf {} +
+	find . -type d -name ".pytest_cache" -exec rm -rf {} +
+	find . -type d -name ".coverage" -exec rm -rf {} +
+	find . -type d -name ".mypy_cache" -exec rm -rf {} +
+	find . -type d -name ".ruff_cache" -exec rm -rf {} +
+	find . -type d -name "dist" -exec rm -rf {} +
+	find . -type d -name "build" -exec rm -rf {} +
+	find . -type d -name "*.egg-info" -exec rm -rf {} +
+	find . -type d -name "htmlcov" -exec rm -rf {} +
+	find . -type f -name "*.pyc" -delete
+	find . -type f -name "*.pyo" -delete
+	find . -type f -name "*.pyd" -delete
+	find . -type f -name ".coverage" -delete
+	find . -type f -name "coverage.xml" -delete
+	poetry env remove --all
+	pre-commit clean
+	rm -rf .pytest_cache .coverage .mypy_cache .ruff_cache
+	@echo "$(GREEN)✅ Clean complete$(NC)"
 
 # =================================================================
-# Default Target
+# Deployment
 # =================================================================
+.PHONY: build deploy docker-build docker-up docker-down
+
+# Docker commands
+docker-build:
+	@echo "$(BLUE)🐳 Building Docker image...$(NC)"
+	docker-compose build
+
+docker-up:
+	@echo "$(BLUE)🐳 Starting Docker containers...$(NC)"
+	docker-compose up -d
+
+docker-down:
+	@echo "$(BLUE)🐳 Stopping Docker containers...$(NC)"
+	docker-compose down
+build: clean
+	@echo "$(BLUE)🏗️ Building project...$(NC)"
+	poetry build
+	@echo "$(GREEN)✅ Build complete$(NC)"
+
+deploy: check-all build
+	@echo "$(BLUE)🚀 Deploying project...$(NC)"
+	poetry publish
+	@echo "$(GREEN)✅ Deploy complete$(NC)"
+
+
+
+# =================================================================
+# Documentation commands
+# =================================================================
+docs:
+	@echo "$(BLUE)📚 Building documentation...$(NC)"
+	poetry run mkdocs build
+	@echo "$(GREEN)✅ Documentation built$(NC)"
+
+docs-serve:
+	@echo "$(BLUE)🌐 Serving documentation...$(NC)"
+	poetry run mkdocs serve
+
+
+# Set default target
 .DEFAULT_GOAL := help

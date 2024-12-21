@@ -1,3 +1,16 @@
+default_language_version:
+    python: python3.13
+default_stages: [pre-commit, pre-push]
+fail_fast: true
+exclude: |
+    (?x)^(
+        migrations/|
+        .pytest_cache/|
+        __pycache__/|
+        .git/
+    )$
+minimum_pre_commit_version: '3.6.2'
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -8,24 +21,30 @@ repos:
       - id: check-toml
       - id: check-json
       - id: check-added-large-files
+        args: ['--maxkb=1024']
       - id: detect-private-key
       - id: check-case-conflict
       - id: mixed-line-ending
         args: [--fix=lf]
       - id: debug-statements
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: check-merge-conflict
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.4
     hooks:
       - id: ruff
-        args: [--fix]
+        args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
+        args: [--check]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.13.0
     hooks:
       - id: mypy
-        additional_dependencies:
+        args: ["--disable-error-code", "unused-ignore"]
+        additional_dependencies: &mypy_deps
           - django-stubs>=5.1.1
           - djangorestframework-stubs>=3.15.1
           - types-python-slugify
@@ -59,13 +78,14 @@ repos:
           - psycopg2>=2.9.10
           - pre-commit>=4.0.1
           - pytest>=8.3.3
+          - drf-yasg>=1.21.8
 
   - repo: https://github.com/PyCQA/bandit
     rev: 1.8.0
     hooks:
       - id: bandit
-        args: ["-ll", "-i"]
-        files: .py$
+        args: ["-c", "pyproject.toml", "-ll", "--recursive", "-i"]
+        files: \.py$
 
   - repo: local
     hooks:
@@ -75,4 +95,94 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
+        stages: [pre-push]
         always_run: true
+
+      - id: django-check
+        name: django-check
+        entry: python manage.py check --deploy
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: django-migrations-check
+        name: django-migrations-check
+        entry: python manage.py makemigrations --check --dry-run
+        language: system
+        types: [python]
+        pass_filenames: false
+      - id: changelogs-rst
+        name: changelogs must be rst
+        entry: changelog filenames must end in .rst
+        language: fail
+        files: 'changelog/.*(?<!\.rst)$'
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.19.1
+    hooks:
+      - id: pyupgrade
+        args: [--py313-plus]
+
+  # - repo: https://github.com/pylint-dev/pylint
+  #   rev: v3.3.2
+  #   hooks:
+  #     - id: pylint
+  #       args:
+  #         - --rcfile=pyproject.toml
+  #         - --django-settings-module=config_project.settings.dev_config
+  #       additional_dependencies: *mypy_deps
+
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.30.0
+    hooks:
+      - id: check-github-workflows
+      - id: check-dependabot
+      - id: check-renovate
+
+  # - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+  #   rev: v1.3.3
+  #   hooks:
+  #     - id: python-safety-dependencies-check
+  #       args: [--disable-audit-and-monitor]
+
+  # - repo: https://github.com/jendrikseipp/vulture
+  #   rev: v2.14
+  #   hooks:
+  #     - id: vulture
+      #   args: [--min-confidence=80]
+      #   files: 'ed_project/**/*.py'  # This passes all Python files in your project
+
+
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.3.1
+    hooks:
+      - id: autoflake
+        args: [
+          --remove-all-unused-imports,
+          --remove-unused-variables,
+          --remove-duplicate-keys,
+          --expand-star-imports,
+        ]
+
+  - repo: https://github.com/python-poetry/poetry
+    rev: '1.8.0'
+    hooks:
+      - id: poetry-check
+      - id: poetry-lock
+      - id: poetry-export
+        args: ["-f", "requirements.txt", "-o", "requirements.txt", "--without-hashes"]
+
+
+
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: python-check-blanket-noqa
+      - id: python-check-mock-methods
+      - id: python-no-eval
+      - id: python-no-log-warn
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.13.1-beta
+    hooks:
+      - id: hadolint
+        files: Dockerfile

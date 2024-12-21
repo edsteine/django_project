@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling>=1.21.0"]
-build-backend = "hatchling.build"
+requires = ["poetry>=1.8.5"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.hatch.build.targets.wheel]
 packages = ["ed_project"]
@@ -11,119 +11,130 @@ sources = ["."]
 [tool.hatch.metadata]
 allow-direct-references = true
 
-[project]
+# [project]
+# name = "ed_project"
+# version = "0.1.0"
+# description = "Project description"
+# authors = [{ name = "Adil AJDAA", email = "a.ajdaa@outlook.com" }]
+# requires-python = ">=3.8,<3.14" # More flexible version range
+# license = { text = "MIT" }
+[tool.poetry]
 name = "ed_project"
 version = "0.1.0"
 description = "Project description"
-authors = [{ name = "Adil AJDAA", email = "a.ajdaa@outlook.com" }]
-requires-python = ">=3.8,<3.14" # More flexible version range
-license = { text = "MIT" }
-dependencies = [
-    # Web Framework
-    "Django>=5.1.3,<5.2.0",
-    "djangorestframework>=3.15.2",
-    "djangorestframework-simplejwt>=5.3.1",
-
-    "pillow>=11.0.0",
-    # Security
-    "django-cryptography>=1.1",
-    "django-axes>=6.3.0",
-    "django-password-validators>=1.7.1",
-
-    # Database & Caching
-    "django-redis>=5.4.0",
-    "redis>=5.0.1",
-
-    # Environment & Configuration
-    "django-environ>=0.11.2",
-
-    # Utils
-    "python-slugify>=8.0.1",
-    "structlog>=24.4.0",
-    "typing-extensions>=4.10",
-    "phonenumbers>=8.13.52",
-
-    # Middleware
-    "django-cors-headers>=4.6.0",
-    "whitenoise>=6.6.0",
-    "pip>=24.3.1",
-    "pip-tools>=7.4.1",
-    "django-debug-toolbar>=4.4.6",
-    "django-extensions>=3.2.3",
-    "psycopg2>=2.9.10",
-    "pre-commit>=4.0.1",
-    # API Documentation
-    "drf-spectacular>=0.27.0", # OpenAPI 3 schema generation
-
-    # Performance
-    "django-silk>=5.0.0",     # Performance profiling
-    "django-cachalot>=2.7.0", # Database query caching
-
-    # Async support
-    "asgiref>=3.8.0",
+authors = ["Adil AJDAA <a.ajdaa@outlook.com>"]
+license = "MIT"
+package-mode = false
+readme = "README.md"
+repository = "https://github.com/yourusername/ed_project"
+documentation = "https://ed_project.readthedocs.io"
+packages = [{ include = "ed_project" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: Django",
+    "Programming Language :: Python :: 3.13",
 ]
+[tool.poetry.dependencies]
+python = ">=3.13,<4.0"
+"poetry"=">=1.8.5"
+# python = ">=3.10,<4.0"
+"Django" = ">=5.1.4"
+"djangorestframework" = ">=3.15.2"
+"djangorestframework-simplejwt" = ">=5.3.1"
+"pillow" = ">=11.0.0"
+"django-cryptography" = ">=1.1"
+"django-axes" = ">=7.0.1"
+"django-password-validators" = ">=1.7.3"
+"django-redis" = ">=5.4.0"
+"redis" = ">=5.2.1"
+"django-environ" = ">=0.11.2"
+"python-slugify" = ">=8.0.4"
+"structlog" = ">=24.4.0"
+"typing-extensions" = ">=4.12.2"
+"phonenumbers" = ">=8.13.52"
+"django-cors-headers" = ">=4.6.0"
+"whitenoise" = ">=6.8.2"
+"pip" = ">=24.3.1"
+"pip-tools" = ">=7.4.1"
+"psycopg2" = ">=2.9.10"
+"pre-commit" = ">=4.0.1"
+"drf-spectacular" = ">=0.28.0"
+"django-silk" = ">=5.3.2"
+"django-cachalot" = ">=2.7.0"
+"asgiref" = ">=3.8.1"
+uvicorn = { version = ">=0.29.0", optional = true }
+gunicorn = { version = ">=21.2.0", optional = true }
+sentry-sdk = { version = ">=2.1.1", optional = true }
+django-health-check = { version = ">=3.18.1", optional = true }
+django-prometheus = { version = ">=2.3.1", optional = true }
+psutil = { version = ">=5.9.0", optional = true }
 
-[project.optional-dependencies]
-dev = [
-    # Code Quality
-    "ruff>=0.4",
-    "black>=24.10.0",
-
-    # Type Checking
-    "mypy>=1.9",
-    "django-stubs>=5.1.1",
-    "djangorestframework-stubs>=3.15.1",
-
-    # Development Tools
-    "django-debug-toolbar>=4.4.6",
-    "django-extensions>=3.2.3",
-    "ipython>=8.18.0",
-    "rich>=13.7.0",
-
-    # Security Testing
-    "pip-audit>=2.7.3",
-    "bandit>=1.7.10",
-
-    # Git Hooks
-    "pre-commit>=4.0.1",
-
-    # Testing Framework
-    "pytest>=8.3.3",
-    "pytest-django>=4.9.0",
-    "pytest-mock>=3.14.0",
-    "pytest-cov>=6.0.0",
-
-    # Test Data
-    "factory-boy>=3.3.1",
-    "faker>=24.4.0",
-    "freezegun>=1.4.0",
+[tool.poetry.dev-dependencies]
+# [tool.poetry.group.dev.dependencies]
+pytest-asyncio = ">=0.23.5"
+pytest-xdist = ">=3.5.0"
+pytest-timeout = ">=2.3.1"
+coverage = { extras = ["toml"], version = ">=7.4.1" }
+# types-all = ">=1.0.0"
+"vulture" = ">=2.14"
+"ruff" = ">=0.8.4"
+"black" = ">=24.10.0"
+"mypy" = ">=1.14.0"
+"django-stubs" = ">=5.1.1"
+"djangorestframework-stubs" = ">=3.15.2"
+"django-debug-toolbar" = ">=4.4.6"
+"django-extensions" = ">=3.2.3"
+"ipython" = ">=8.31.0"
+"rich" = ">=13.9.4"
+"drf-yasg" = ">=1.21.8"
+"pip-audit" = ">=2.7.3"
+"bandit" = ">=1.8.0"
+"pytest" = ">=8.3.4"
+"pytest-django" = ">=4.9.0"
+"pytest-mock" = ">=3.14.0"
+"pytest-cov" = ">=6.0.0"
+"factory-boy" = ">=3.3.1"
+"faker" = ">=33.1.0"
+"freezegun" = ">=1.5.1"
+"safety" = ">=3.2.14"
+"django-defender" = ">=0.9.8"
 
 
-    "safety>=3.0.0",          # Dependency security checks
-    "django-defender>=0.9.0", # Additional login protection
-]
-
+[tool.poetry.extras]
 prod = [
-    # Server
-    "uvicorn>=0.29.0",
-    "gunicorn>=21.2.0",
-
-    # Monitoring
-    "sentry-sdk>=2.1.1",
-    "django-health-check>=3.18.1",
-    "django-prometheus>=2.3.1",
-    "psutil>=5.9.0",
+    "uvicorn",
+    "gunicorn",
+    "sentry-sdk",
+    "django-health-check",
+    "django-prometheus",
+    "psutil",
 ]
 
+
+# [tool.poetry.group.docs]
+# optional = true
+# dependencies = [
+#     "mkdocs-material" = ">=9.5.12"
+#     "mkdocstrings" = [
+#         extras = ["python"]
+#         version = ">=0.24.0"]
+# ]
+# [tool.poetry.group.monitoring]
+# optional = true
+# dependencies = [
+#     prometheus-client = ">=0.19.0"
+#     "elastic-apm" = ">=6.21.3.0"
+# ]
 [tool.ruff]
 line-length = 140
 target-version = "py313"
-exclude = ["*/migrations/*", "tests/"]
+exclude = ["*/migrations/*", "tests/", "docs/*", "build/*", "dist/*"]
 fix = true
 respect-gitignore = true
 src = ["ed_project"]
 indent-width = 4
-
+unsafe-fixes = false
+cache-dir = ".ruff_cache"
 [tool.ruff.format]
 docstring-code-format = true
 quote-style = "double"
@@ -133,6 +144,11 @@ line-ending = "lf"
 
 [tool.ruff.lint]
 select = [
+
+    # "ALL",  # Enable all rules
+    "FURB", # refurb
+    "LOG",  # flake8-logging
+    "TD",   # flake8-todos
     # Basic Code Validation
     "F", # pyflakes (basic code errors)
     "E", # pycodestyle errors (syntax and style)
@@ -248,6 +264,12 @@ ignore = [
 
 ]
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 120
+
 [tool.ruff.lint.isort]
 combine-as-imports = true
 force-wrap-aliases = true
@@ -266,6 +288,7 @@ max-complexity = 10
 [tool.mypy]
 python_version = "3.13"
 strict = true
+mypy_path = "stubs"
 follow_imports = "normal"
 warn_redundant_casts = true
 warn_unused_ignores = true
@@ -273,7 +296,11 @@ ignore_missing_imports = false
 warn_unused_configs = true
 warn_return_any = true
 show_error_codes = true
-plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+implicit_reexport = false
+plugins = [
+    "mypy_django_plugin.main",
+    "mypy_drf_plugin.main",
+]
 disallow_untyped_calls = true
 disallow_untyped_defs = true
 disallow_any_generics = true
@@ -281,29 +308,34 @@ no_implicit_reexport = true
 check_untyped_defs = true
 exclude = ["tests", ",migrations"]
 
-# [[tool.mypy.overrides]]
-# module = [
-#     "environ",
-#     "django.*",
-#     "rest_framework.*"
-# ]
-# ignore_missing_imports = false
 
 [tool.django-stubs]
 django_settings_module = "config_project.settings.dev_config"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config_project.settings.dev_config"
-python_files = ["test_*.py", "*_test.py", "testing/python/*.py"]
+
+pythonpath = "."
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
 addopts = [
     "--cov=api",
-    # "--maxfail=2 --disable-warnings -q",
     "--cov-report=term-missing",
     "--cov-report=xml:coverage.xml",
     "--no-cov-on-fail",
     "--strict-markers",
     "-ra",
-    # "--randomly-seed=1234",  # Randomize test order
+    "--strict-markers",
+    "--strict-config",
+    "--cov=ed_project",
+    "--cov-report=term-missing",
+    "--cov-report=xml:coverage.xml",
+    "--cov-report=html:htmlcov",
+    "--durations=10",
+    "-ra",
+    "-v",
 ]
 testpaths = ["tests"]
 markers = [
@@ -339,3 +371,14 @@ exclude_lines = [
 [tool.bandit]
 exclude_dirs = ["tests", "migrations"]
 skips = ["B101"]                       # Skip assert used as test statements
+
+
+[tool.vulture]
+exclude = ["api/", "tests/"]
+ignore_decorators = ["tests*", "@require_*"]
+ignore_names = ["visit_*", "do_*"]
+make_whitelist = true
+min_confidence = 80
+paths = ["."]
+sort_by_size = true
+verbose = true

@@ -9,6 +9,9 @@ interface (CLI) logic for managing and interacting with the project.
 import os
 import sys
 
+# from environ import Env
+from environ import Env  # type: ignore[import-untyped]
+
 
 def main() -> None:
     """Set up and run Django management commands.
@@ -25,8 +28,15 @@ def main() -> None:
         ImproperlyConfigured: If Django settings are not properly configured.
 
     """
-    settings_module = os.environ.get("DJANGO_SETTINGS_MODULE", "config_project.settings.dev_config")
+    env_variables = Env()
+
+    # Load environment variables from a `.env` file. Ensure `.env` exists in the project root.
+    # Env.read_env(".env")
+    Env.read_env()
+
+    settings_module = env_variables("DJANGO_SETTINGS_MODULE", default="config_project.settings.dev_config")
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", settings_module)
+
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
