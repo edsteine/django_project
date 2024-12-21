@@ -5,32 +5,22 @@ import sys
 from datetime import timedelta
 from pathlib import Path
 
-# Function to get the logging configuration
-from typing import Any
-
-# import environ
 import structlog
 
-
-# from environ import Env
 from environ import Env  # type: ignore[import-untyped]
 
-# Initialize environment variables using environ
-
-env_variables = Env()
-
-# Load environment variables from a `.env` file. Ensure `.env` exists in the project root.
-# Env.read_env(".env")
+# Initialize environment
+env = Env()
 Env.read_env()
+
+# Base directory setup
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+LOGS_DIR = BASE_DIR / "logs"
+os.makedirs(LOGS_DIR, exist_ok=True)
 
 logger = logging.getLogger(__name__)
 
-# Base directory for project structure
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-LOGS_DIR = BASE_DIR / "logs"  # Directory for log files
-os.makedirs(LOGS_DIR, exist_ok=True)  # Create logs directory if it doesn't exist
-
-# Required environment variables for security and database configuration
+# Required environment variables check
 required_env_vars: list[str] = [
     "DJANGO_ENVIRONMENT",
     "DJANGO_SETTINGS_MODULE",
@@ -76,6 +66,7 @@ required_env_vars: list[str] = [
     "AWS_SECRET_ACCESS_KEY",
     "AWS_S3_CUSTOM_DOMAIN",
     "FEATURE_X_ENABLED",
+    "TESTING",
     "ML_SERVICE_URL",
     "GRAPHQL_ENDPOINT",
     "AI_CHAT_SERVICE_URL",
@@ -86,42 +77,39 @@ required_env_vars: list[str] = [
     "DATABASE_POOL_SIZE",
     "DATABASE_MAX_CONNS",
     "DJANGO_DEV_TOOLBAR",
+    "CORS_ALLOW_ALL_ORIGINS",
+    "CORS_ALLOW_CREDENTIALS",
+    "USE_I18N",
+    "USE_TZ",
+    "ROTATE_REFRESH_TOKENS",
+    "BLACKLIST_AFTER_ROTATION",
 ]
-# Check for missing environment variables
+
 missing_vars: list[str] = []
 for var_name in required_env_vars:
-    var_value = env_variables(var_name, default=None)
+    var_value = env(var_name, default=None)
     if var_value is None or not var_value.strip():
         missing_vars.append(var_name)
 
-# If any required environment variables are missing, print and exit
 if missing_vars:
     error_message = "The following environment variables are missing or empty:\n"
     error_message += ", ".join(missing_vars)
     logger.error(error_message)
     sys.exit(1)
 
-# Common Django settings
-SECRET_KEY = env_variables("DJANGO_SECRET_KEY")
-DEBUG = env_variables("DJANGO_DEBUG")
-ALLOWED_HOSTS = env_variables.list("DJANGO_ALLOWED_HOSTS")
-DB_ENGINE = env_variables("DB_ENGINE")
-DB_NAME = env_variables("DB_NAME")
-DB_USER = env_variables("DB_USER")
-DB_PASSWORD = env_variables("DB_PASSWORD")
-DB_HOST = env_variables("DB_HOST")
-DB_PORT = env_variables("DB_PORT")
-CACHE_BACKEND = env_variables("CACHE_BACKEND")
-EMAIL_BACKEND = env_variables("EMAIL_BACKEND")
-DJANGO_ALLOWED_HOSTS = env_variables("DJANGO_ALLOWED_HOSTS")
-EMAIL_HOST = env_variables("EMAIL_HOST")
-EMAIL_PORT = env_variables("EMAIL_PORT")
-EMAIL_USE_TLS = env_variables("EMAIL_USE_TLS")
-EMAIL_HOST_USER = env_variables("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = env_variables("EMAIL_HOST_PASSWORD")
-# CORS_ALLOWED_ORIGINS = env_variables.list("CORS_ALLOWED_ORIGINS")
+# Core Django Settings
+DEBUG = env.bool("DJANGO_DEBUG", default=True)
+# LOGGING_LEVEL = env.str("LOGGING_LEVEL", default="INFO")
+LOGGING_LEVEL = "INFO"
+if LOGGING_LEVEL not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
+    raise ValueError("Invalid LOGGING_LEVEL. Use DEBUG, INFO, WARNING, ERROR, or CRITICAL.")
 
-# Installed applications for the project
+SECRET_KEY = env("DJANGO_SECRET_KEY", default="django-insecure-dev-key-change-this")
+
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+INTERNAL_IPS = env.list("INTERNAL_IPS", default=["127.0.0.1"])
+
+# Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -129,21 +117,21 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Third party apps
     "rest_framework",
     "rest_framework_simplejwt",
     "corsheaders",
-    "api.V1.resources.users",
     "debug_toolbar",
-    "django_extensions",  # Recommended dev tools
+    "django_extensions",
     "drf_yasg",
+    "silk",
+    # Local apps
+    "api.V1.resources.users",
 ]
 
-# Custom user model for the project
-AUTH_USER_MODEL = "users.User"
-ROOT_URLCONF = "config_project.project_urls"  # Adjust to match your project's URL configuration path
-
-# Middleware configuration
 MIDDLEWARE = [
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
+    "silk.middleware.SilkyMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -152,41 +140,46 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
-# REST Framework settings
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
-    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 10,
+ROOT_URLCONF = "config_project.project_urls"
+AUTH_USER_MODEL = "users.User"
+
+# Database with connection pooling
+# Database configuration
+DATABASES = {
+    "default": {
+        "ENGINE": env("DB_ENGINE", default="django.db.backends.postgresql"),
+        "NAME": env("DB_NAME", default="dev_db"),
+        "USER": env("DB_USER", default="postgres"),
+        "PASSWORD": env("DB_PASSWORD", default="postgres"),
+        "HOST": env("DB_HOST", default="localhost"),
+        "PORT": env("DB_PORT", default="5432"),
+        "CONN_MAX_AGE": 60,
+        "OPTIONS": {
+            "connect_timeout": 10,
+        },
+        "SSL_REQUIRE": False,
+    }
 }
 
-# JWT settings
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": True,
-    "AUTH_HEADER_TYPES": ("Bearer",),
-    "USER_ID_FIELD": "id",
-    "USER_ID_CLAIM": "user_id",
+# Cache settings
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": env("REDIS_CACHE_URL", default="redis://127.0.0.1:6379/1"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "SOCKET_CONNECT_TIMEOUT": 5,
+            "SOCKET_TIMEOUT": 5,
+            "RETRY_ON_TIMEOUT": True,
+            "MAX_CONNECTIONS": 1000,
+            "CONNECTION_POOL_KWARGS": {"max_connections": 100},
+        },
+    }
 }
 
-# Static file settings
-STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [
-    BASE_DIR / "assets",  # Example additional directory
-]
-
-# Internationalization settings
-LANGUAGE_CODE = "en-us"
-USE_I18N = True
-USE_TZ = True
-TIME_ZONE = env_variables("TIME_ZONE")  # Adjust default if needed
-
+# Templates
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -199,11 +192,70 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
+            "debug": DEBUG,
         },
     },
 ]
 
-# Configure structlog to provide structured and human-readable logging
+# Internationalization
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = env("TIME_ZONE", default="UTC")
+USE_I18N = env.bool("USE_I18N", default=True)
+USE_TZ = env.bool("USE_TZ", default=True)
+
+# Static files
+STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / "assets"]
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Development security settings
+
+SECURE_HSTS_SECONDS = env("SECURE_HSTS_SECONDS", default=31536000)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False)
+SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=False)
+SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=False)
+SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=False)
+CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=False)
+CORS_ALLOW_ALL_ORIGINS = env.bool("CORS_ALLOW_ALL_ORIGINS", default=True)
+CORS_ALLOW_CREDENTIALS = env.bool("CORS_ALLOW_CREDENTIALS", default=True)
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:3000", "http://127.0.0.1:3000"])
+
+# REST Framework settings
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/minute",
+        "user": "1000/minute",
+    },
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# JWT settings
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": env.bool("ROTATE_REFRESH_TOKENS", default=True),
+    "BLACKLIST_AFTER_ROTATION": env.bool("BLACKLIST_AFTER_ROTATION", default=True),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+}
+
+# Email settings
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST = env("EMAIL_HOST", default="localhost")
+EMAIL_PORT = env.int("EMAIL_PORT", default=1025)
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=False)
+
+# Structlog configuration
 log_renderer = structlog.dev.ConsoleRenderer() if DEBUG else structlog.processors.JSONRenderer()
 
 structlog.configure(
@@ -214,7 +266,7 @@ structlog.configure(
         structlog.processors.TimeStamper(fmt="iso"),
         structlog.processors.StackInfoRenderer(),
         structlog.processors.format_exc_info,
-        log_renderer,  # Choose the renderer based on DEBUG
+        log_renderer,
     ],
     context_class=dict,
     logger_factory=structlog.stdlib.LoggerFactory(),
@@ -222,94 +274,92 @@ structlog.configure(
     cache_logger_on_first_use=True,
 )
 
-
-# Update the type annotation to be more specific
-def get_logging_config(log_level: str = "INFO") -> dict[str, Any]:
-    """Logging configuration with correct type annotations."""
-    log_renderer = structlog.dev.ConsoleRenderer() if DEBUG else structlog.processors.JSONRenderer()
-
-    return {
-        "version": 1,
-        "disable_existing_loggers": False,
-        "formatters": {
-            "structlog": {
-                "()": structlog.stdlib.ProcessorFormatter,
-                "processor": log_renderer,  # Use appropriate renderer
-                "foreign_pre_chain": [
-                    structlog.stdlib.add_logger_name,
-                    structlog.stdlib.add_log_level,
-                    structlog.processors.TimeStamper(fmt="iso"),
-                ],
-            },
+# Logging configuration
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "structlog": {
+            "()": structlog.stdlib.ProcessorFormatter,
+            "processor": log_renderer,
+            "foreign_pre_chain": [
+                structlog.stdlib.add_logger_name,
+                structlog.stdlib.add_log_level,
+                structlog.processors.TimeStamper(fmt="iso"),
+            ],
         },
-        "handlers": {
-            "console": {
-                "level": log_level,
-                "class": "logging.StreamHandler",
-                "formatter": "structlog",
-            },
-            "file": {
-                "level": log_level,
-                "class": "logging.handlers.RotatingFileHandler",
-                "filename": LOGS_DIR / "django.log",
-                "maxBytes": 10 * 1024 * 1024,  # 10MB
-                "backupCount": 5,
-                "formatter": "structlog",
-            },
+    },
+    "handlers": {
+        "console": {
+            "level": LOGGING_LEVEL,
+            "class": "logging.StreamHandler",
+            "formatter": "structlog",
         },
-        "loggers": {
-            "django": {
-                "handlers": ["console", "file"],
-                "level": log_level,
-                "propagate": True,
-            },
+        "mail_admins": {
+            "level": "ERROR",
+            "class": "django.utils.log.AdminEmailHandler",
         },
-    }
-
-
-# Apply logging configuration
-LOGGING = get_logging_config()  # Configure logging with default log level "INFO"
-
-# Debug Toolbar Configuration
-INTERNAL_IPS = env_variables.list("INTERNAL_IPS")
-
-# Debug settings for development
-ALLOWED_HOSTS = env_variables.list("ALLOWED_HOSTS")
-
-# Disable SSL and secure cookies in development
-SECURE_SSL_REDIRECT = False
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
-
-# CORS settings for development (allow local frontend)
-# CORS_ALLOWED_ORIGINS = env_variables.list("CORS_ALLOWED_ORIGINS")
-
-# Extend JWT access token lifetime for development convenience
-SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"] = timedelta(hours=1)
-
-# Logging setup for development (use INFO level for more verbose logs)
-LOGGING = get_logging_config(log_level="INFO")
-
-# Optional: Email backend for development
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
-# Database configuration
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": env_variables("DB_NAME", default="dev_db"),
-        "USER": env_variables("DB_USER", default="dev_user"),
-        "PASSWORD": env_variables("DB_PASSWORD", default="dev_password"),
-        "HOST": env_variables("DB_HOST", default="localhost"),
-        "PORT": env_variables("DB_PORT", default="5432"),
+        "file": {
+            "level": LOGGING_LEVEL,
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": LOGS_DIR / "django-dev.log",
+            "maxBytes": 10 * 1024 * 1024,  # 10MB
+            "backupCount": 5,
+            "formatter": "structlog",
+        },
+    },
+    "root": {
+        "handlers": ["console", "file"],
+        "level": LOGGING_LEVEL,
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console", "file"],
+            "level": env("LOGGING_LEVEL", default="INFO"),
+            "propagate": False,
+        },
+        "django.db.backends": {
+            "handlers": ["console"],
+            "level": LOGGING_LEVEL,
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["mail_admins"],
+            "level": "ERROR",
+            "propagate": True,
+        },
     },
 }
 
-# Django Debug Toolbar configuration
+# Debug Toolbar settings
 DEBUG_TOOLBAR_CONFIG = {
-    "INTERCEPT_REDIRECTS": False,
     "SHOW_TOOLBAR_CALLBACK": lambda request: True,
+    "INTERCEPT_REDIRECTS": False,
+    "SHOW_TEMPLATE_CONTEXT": True,
+    "ENABLE_STACKTRACES": True,
 }
 
-# Optional performance and development tools
-SHELL_PLUS = "ipython"  # If using django-extensions
+# Django Extensions settings
+SHELL_PLUS = "ipython"
+SHELL_PLUS_PRINT_SQL = True
+SHELL_PLUS_IMPORTS = [
+    "from datetime import datetime, timedelta, date",
+    "from django.conf import settings",
+    "from django.core.cache import cache",
+    "from django.db.models import Q, F, Count, Sum, Max, Min, Avg",
+]
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+ADMINS = [("Admin Name", "admin@example.com")]
+
+
+# Feature Flags
+
+FEATURE_X_ENABLED = env.bool("FEATURE_X_ENABLED", default=False)
+
+
+# Testing & Coverage
+TESTING = env.bool("TESTING", default=True)
+if TESTING:
+    DATABASES["default"] = {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}

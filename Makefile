@@ -172,7 +172,7 @@ validate:
 # =================================================================
 # Quality Assurance
 # =================================================================
-.PHONY: lint security  type-check vulture-check security
+.PHONY: lint security  mypy vulture-check security
 
 # Linting and formatting
 lint:
@@ -183,8 +183,9 @@ lint:
 	poetry run ruff check . --fix || { echo "$(RED)❌ Ruff check failed$(NC)"; exit 1; }
 	@echo "$(GREEN)✓ Lint complete$(NC)"
 
-type-check:
+mypy:
 	@echo "$(BLUE)📋 Running type checks...$(NC)"
+	set -a; source .env; set +a
 	poetry run mypy . || { echo "$(RED)❌ Type checking failed$(NC)"; exit 1; }
 	@echo "$(GREEN)✓ Type checking complete$(NC)"
 
@@ -242,7 +243,10 @@ runserver:
 
 shell:
 	@echo "$(BLUE)🐚 Starting Django shell...$(NC)"
-	poetry run python manage.py shell_plus
+	poetry run python manage.py shell_plus  --ipython
+db-shell:
+	@echo "$(BLUE)🐚 Starting Django shell...$(NC)"
+	poetry run python manage.py dbshell
 
 collectstatic:
 	@echo "$(BLUE)📦 Collecting static files...$(NC)"
@@ -327,7 +331,8 @@ db-reset: clean
 	chmod +x ./scripts/dev/dev_database_create.sh
 	./scripts/dev/dev_database_delete.sh
 	./scripts/dev/dev_database_create.sh
-	migrate
+	make migrate
+	make superuser
 	@echo "$(GREEN)✅ Database reset complete$(NC)"
 
 
@@ -360,6 +365,7 @@ commit-push-reset-install:clean install-dev
 
 commit-push-reset:
 	@echo "$(BLUE)🎯 Committing changes...$(NC)"
+	poetry lock --no-update
 	git init
 	git remote get-url origin || git remote add origin https://github.com/edsteine/django_project.git
 	git branch -M main
@@ -374,6 +380,7 @@ commit-push-reset:
 
 commit-push:
 	@echo "$(BLUE)📝 Committing and pushing changes...$(NC)"
+	poetry lock --no-update
 	git add .|| true
 	git commit -m "Update: $(shell date '+%Y-%m-%d %H:%M:%S')"|| true
 	@echo "$(GREEN)✅ Changes committed$(NC)"
@@ -448,3 +455,6 @@ docs-serve:
 
 # Set default target
 .DEFAULT_GOAL := help
+
+env:
+	set -a; source .env; set +a  && mypy .

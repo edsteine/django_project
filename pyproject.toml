@@ -37,6 +37,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.13,<4.0"
 "poetry" = ">=1.8.5"
+"poetry-plugin-export"=">=1.8.0"
 # python = ">=3.10,<4.0"
 "Django" = ">=5.1.4"
 "djangorestframework" = ">=3.15.2"
@@ -99,7 +100,8 @@ coverage = { extras = ["toml"], version = ">=7.4.1" }
 "safety" = ">=3.2.14"
 "django-defender" = ">=0.9.8"
 pylint = "^3.3.2"
-
+dotenv-linter = ">=0.5.0"
+# typing =">=3.10.0"
 [tool.poetry.extras]
 prod = [
     "uvicorn",
@@ -284,6 +286,8 @@ max-complexity = 10
 "tests/*" = ["S101", "ARG"]
 "__init__.py" = ["F401"]
 
+# Add this section for dotenv configuration
+
 
 [tool.mypy]
 python_version = "3.13"
@@ -338,7 +342,7 @@ addopts = [
     "--cov=ed_project",
     "--cov-report=html:htmlcov",
     "--durations=10",
-    "-v"
+    "-v",
 ]
 testpaths = ["tests"]
 markers = [
@@ -347,7 +351,7 @@ markers = [
     "docker: marks tests requiring docker",
     "unit: marks unit tests",
     "api: marks API tests",
-    "db: marks database tests"
+    "db: marks database tests",
 ]
 filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
 

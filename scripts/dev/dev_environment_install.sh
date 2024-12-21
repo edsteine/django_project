@@ -114,6 +114,7 @@ main() {
     install_system_dependencies
     install_pyenv
     setup_python
+    brew install redis
     success "Setup complete! 🎉"
     echo "Please restart your terminal or run:"
     echo "source ~/.bashrc  # or source ~/.zshrc for zsh users"
