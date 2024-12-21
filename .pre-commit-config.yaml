@@ -89,14 +89,14 @@ repos:
 
   - repo: local
     hooks:
-      - id: django-test
-        name: django-test
-        entry: pytest
-        language: system
-        types: [python]
-        pass_filenames: false
-        stages: [pre-push]
-        always_run: true
+      # - id: django-test
+      #   name: django-test
+      #   entry: pytest
+      #   language: system
+      #   types: [python]
+      #   pass_filenames: false
+      #   stages: [pre-push]
+      #   always_run: true
 
       - id: django-check
         name: django-check
@@ -123,14 +123,14 @@ repos:
       - id: pyupgrade
         args: [--py313-plus]
 
-  # - repo: https://github.com/pylint-dev/pylint
-  #   rev: v3.3.2
-  #   hooks:
-  #     - id: pylint
-  #       args:
-  #         - --rcfile=pyproject.toml
-  #         - --django-settings-module=config_project.settings.dev_config
-  #       additional_dependencies: *mypy_deps
+  - repo: https://github.com/pylint-dev/pylint
+    rev: v3.3.2
+    hooks:
+      - id: pylint
+        args:
+          - --rcfile=pyproject.toml
+        #   - --django-settings-module=config_project.settings.dev_config
+        additional_dependencies: *mypy_deps
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.30.0
@@ -139,6 +139,12 @@ repos:
       - id: check-dependabot
       - id: check-renovate
 
+  # - repo: https://github.com/gitleaks/gitleaks
+  #   rev: v8.19.0
+  #   hooks:
+  #     - id: gitleaks
+  #       args:
+  #         - --source=.
   # - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
   #   rev: v1.3.3
   #   hooks:

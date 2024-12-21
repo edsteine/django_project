@@ -74,6 +74,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         """
         if self.birth_date:
             today = timezone.now().date()
+            # pylint: disable=no-member
             return today.year - self.birth_date.year - ((today.month, today.day) < (self.birth_date.month, self.birth_date.day))
         return None
 

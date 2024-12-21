@@ -343,6 +343,7 @@ pre-commit-check: clean
 	poetry run pre-commit run --all-files || { echo "$(YELLOW)⚠️  Pre-commit checks found issues$(NC)"; }
 	@echo "$(GREEN)✓ Pre-commit checks complete$(NC)"
 
+
 commit-push-reset-install:clean install-dev
 	@echo "$(BLUE)🎯 Committing changes...$(NC)"
 	git init
@@ -351,7 +352,7 @@ commit-push-reset-install:clean install-dev
 	# Add empty files or folders by ensuring .gitkeep or other placeholders are added
 	find . -type d -empty -exec touch {}/.gitkeep \; # Add .gitkeep to empty folders
 	git add . # Add all changes, including empty directories with .gitkeep
-	git commit -m "Update: $(shell date '+%Y-%m-%d %H:%M:%S')"
+	git commit -m "Update: $(shell date '+%Y-%m-%d %H:%M:%S')" || true
 	@echo "$(GREEN)✅ Changes committed$(NC)"
 	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
 	git push --force --set-upstream origin main
@@ -365,7 +366,7 @@ commit-push-reset:
 	# Add empty files or folders by ensuring .gitkeep or other placeholders are added
 	find . -type d -empty -exec touch {}/.gitkeep \; # Add .gitkeep to empty folders
 	git add . # Add all changes, including empty directories with .gitkeep
-	git commit -m "Update: $(shell date '+%Y-%m-%d %H:%M:%S')"
+	git commit -m "Update: $(shell date '+%Y-%m-%d %H:%M:%S')" || true
 	@echo "$(GREEN)✅ Changes committed$(NC)"
 	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
 	git push --force --set-upstream origin main
@@ -373,11 +374,12 @@ commit-push-reset:
 
 commit-push:
 	@echo "$(BLUE)📝 Committing and pushing changes...$(NC)"
-	git add .
-	git commit -m "Update: $(shell date '+%Y-%m-%d %H:%M:%S')"
+	git add .|| true
+	git commit -m "Update: $(shell date '+%Y-%m-%d %H:%M:%S')"|| true
 	@echo "$(GREEN)✅ Changes committed$(NC)"
 	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
 	git push --force --set-upstream origin main
+
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
 
 
