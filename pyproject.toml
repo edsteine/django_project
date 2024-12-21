@@ -314,12 +314,20 @@ django_settings_module = "config_project.settings.dev_config"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config_project.settings.dev_config"
-
 pythonpath = "."
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+python = "^3.13"
+pytest = "^8.3.4"
+pytest-randomly = "^3.16.0"
+pytest-sugar = "^1.0.0"
+requirements = [
+    "pytest-randomly", # Randomize test order
+    "pytest-sugar",    # Improved test output
+]
 addopts = [
     "--cov=api",
     "--cov-report=term-missing",
@@ -345,10 +353,6 @@ markers = [
     "unit: marks unit tests",
     "api: marks API tests",
     "db: marks database tests",
-]
-requirements = [
-    "pytest-randomly", # Randomize test order
-    "pytest-sugar",    # Improved test output
 ]
 filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
 
