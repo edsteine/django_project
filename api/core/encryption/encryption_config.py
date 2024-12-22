@@ -43,5 +43,6 @@ try:
         raise ValueError(f"No encryption algorithm found in {environment} environment.")
     logger.info("%s encryption settings are securely configured.", environment.capitalize())
 except ValueError as e:
+    # logger.error(f"Configuration Error: {e}")
     logger.info("Configuration Error: %s", e)
     raise  # Ensure invalid settings stop the application

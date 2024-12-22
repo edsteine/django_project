@@ -41,6 +41,8 @@ DOCKER_TAG := latest
 K8S_NAMESPACE := development
 K8S_CONTEXT := dev-cluster
 
+# Define a helper to run a command and print it in yellow
+RUN = @printf "$(YELLOW)%s$(NC)\n" "$1" && eval $1
 
 # =================================================================
 # Help Command
@@ -384,18 +386,36 @@ commit-push-reset: lint
 	git push --force --set-upstream origin main
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
 
-commit-push:lint
+TIMESTAMP := $(shell date +'%Y%m%d_%H%M%S')
+
+commit-push: lint
+	@echo "$(BLUE)📝 Committing and pushing changes...$(NC)"
+	$(call RUN, git config --global http.postBuffer 524288000)
+	$(call RUN, poetry lock --no-update)
+	$(call RUN, git add .)
+	$(call RUN, git commit -m "Update_$(TIMESTAMP)")
+	@echo "$(GREEN)✅ Changes committed$(NC)"
+	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
+	$(call RUN, git push --force --set-upstream origin main)
+	@echo "$(GREEN)✅ Changes pushed$(NC)"
+
+
+commit-push2: lint
 	@echo "$(BLUE)📝 Committing and pushing changes...$(NC)"
 	git config --global http.postBuffer 524288000
 	poetry lock --no-update
-	git add .|| true
-	git commit -m "Update: $(shell date '+%Y-%m-%d %H:%M:%S')"|| true
+
+	@echo "$(BLUE)🔄 Staging changes...$(NC)"
+	git add . || { echo "$(RED)❌ Failed to stage changes$(NC)"; exit 1; }
+	DT=$(shell date '+%Y-%m-%d %H:%M:%S')
+	@echo "$(BLUE)🔒 Committing changes...$(NC)"
+	git commit -m "Update: DT" || { echo "$(YELLOW)⚠️ No changes to commit$(NC)"; exit 0; }
+
 	@echo "$(GREEN)✅ Changes committed$(NC)"
 	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
-	git push --force --set-upstream origin main
+	git push --force --set-upstream origin main || { echo "$(RED)❌ Failed to push changes$(NC)"; exit 1; }
 
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
-
 
 clean:
 	@echo "$(BLUE)🧹 Cleaning project...$(NC)"
