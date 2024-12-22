@@ -198,7 +198,7 @@ vulture:
 	@echo "$(GREEN)✅ vulture checks complete$(NC)"
 
 
-
+all-lint: lint mypy security vulture
 # =================================================================
 # Django Commands
 # =================================================================

@@ -10,8 +10,17 @@ import structlog
 from environ import Env  # type: ignore[import-untyped]
 
 # Initialize environment
-env = Env()
-Env.read_env(overwrite=True)
+
+# Constants for environment types
+ENV_DEV = "dev"
+# Initialize the Env object to load and parse environment variables
+env_variables = Env()
+# Determine the environment (development or production)
+environment: str = env_variables("DJANGO_ENVIRONMENT") or ENV_DEV
+
+# Load environment variables based on the environment
+if environment == ENV_DEV:
+    env_variables.read_env(overwrite=True)  # Load .env file for development environment
 
 # Base directory setup
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -87,7 +96,7 @@ required_env_vars: list[str] = [
 
 missing_vars: list[str] = []
 for var_name in required_env_vars:
-    var_value = env(var_name, default=None)
+    var_value = env_variables(var_name)
     if var_value is None or not var_value.strip():
         missing_vars.append(var_name)
 
@@ -98,16 +107,16 @@ if missing_vars:
     sys.exit(1)
 
 # Core Django Settings
-DEBUG = env.bool("DJANGO_DEBUG", default=True)
-# LOGGING_LEVEL = env.str("LOGGING_LEVEL", default="INFO")
+DEBUG = env_variables.bool("DJANGO_DEBUG") or True
+# LOGGING_LEVEL = env_variables.str("LOGGING_LEVEL") or "INFO")
 LOGGING_LEVEL = "INFO"
 if LOGGING_LEVEL not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
     raise ValueError("Invalid LOGGING_LEVEL. Use DEBUG, INFO, WARNING, ERROR, or CRITICAL.")
 
-SECRET_KEY = env("DJANGO_SECRET_KEY", default="django-insecure-dev-key-change-this")
+SECRET_KEY = env_variables("DJANGO_SECRET_KEY") or "django-insecure-dev-key-change-this"
 
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
-INTERNAL_IPS = env.list("INTERNAL_IPS", default=["127.0.0.1"])
+ALLOWED_HOSTS = env_variables.list("ALLOWED_HOSTS") or ["localhost", "127.0.0.1"]
+INTERNAL_IPS = env_variables.list("INTERNAL_IPS") or ["127.0.0.1"]
 
 # Application definition
 INSTALLED_APPS = [
@@ -149,12 +158,12 @@ AUTH_USER_MODEL = "users.User"
 # Database configuration
 DATABASES = {
     "default": {
-        "ENGINE": env("DB_ENGINE", default="django.db.backends.postgresql"),
-        "NAME": env("DB_NAME", default="dev_db"),
-        "USER": env("DB_USER", default="postgres"),
-        "PASSWORD": env("DB_PASSWORD", default="postgres"),
-        "HOST": env("DB_HOST", default="localhost"),
-        "PORT": env("DB_PORT", default="5432"),
+        "ENGINE": env_variables("DB_ENGINE") or "django.db.backends.postgresql",
+        "NAME": env_variables("DB_NAME") or "dev_db",
+        "USER": env_variables("DB_USER") or "postgres",
+        "PASSWORD": env_variables("DB_PASSWORD") or "postgres",
+        "HOST": env_variables("DB_HOST") or "localhost",
+        "PORT": env_variables("DB_PORT") or "5432",
         "CONN_MAX_AGE": 60,
         "OPTIONS": {
             "connect_timeout": 10,
@@ -167,7 +176,7 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": env("REDIS_CACHE_URL", default="redis://127.0.0.1:6379/1"),
+        "LOCATION": env_variables("REDIS_CACHE_URL") or "redis://127.0.0.1:6379/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "SOCKET_CONNECT_TIMEOUT": 5,
@@ -199,9 +208,9 @@ TEMPLATES = [
 
 # Internationalization
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = env("TIME_ZONE", default="UTC")
-USE_I18N = env.bool("USE_I18N", default=True)
-USE_TZ = env.bool("USE_TZ", default=True)
+TIME_ZONE = env_variables("TIME_ZONE") or "UTC"
+USE_I18N = env_variables.bool("USE_I18N") or True
+USE_TZ = env_variables.bool("USE_TZ") or True
 
 # Static files
 STATIC_URL = "static/"
@@ -213,15 +222,15 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # Development security settings
 
-SECURE_HSTS_SECONDS = env("SECURE_HSTS_SECONDS", default=31536000)
-SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", default=False)
-SECURE_HSTS_PRELOAD = env.bool("SECURE_HSTS_PRELOAD", default=False)
-SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=False)
-SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=False)
-CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=False)
-CORS_ALLOW_ALL_ORIGINS = env.bool("CORS_ALLOW_ALL_ORIGINS", default=True)
-CORS_ALLOW_CREDENTIALS = env.bool("CORS_ALLOW_CREDENTIALS", default=True)
-CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:3000", "http://127.0.0.1:3000"])
+SECURE_HSTS_SECONDS = env_variables("SECURE_HSTS_SECONDS") or 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_variables.bool("SECURE_HSTS_INCLUDE_SUBDOMAINS") or False
+SECURE_HSTS_PRELOAD = env_variables.bool("SECURE_HSTS_PRELOAD") or False
+SECURE_SSL_REDIRECT = env_variables.bool("SECURE_SSL_REDIRECT") or False
+SESSION_COOKIE_SECURE = env_variables.bool("SESSION_COOKIE_SECURE") or False
+CSRF_COOKIE_SECURE = env_variables.bool("CSRF_COOKIE_SECURE") or False
+CORS_ALLOW_ALL_ORIGINS = env_variables.bool("CORS_ALLOW_ALL_ORIGINS") or True
+CORS_ALLOW_CREDENTIALS = env_variables.bool("CORS_ALLOW_CREDENTIALS") or True
+CORS_ALLOWED_ORIGINS = env_variables.list("CORS_ALLOWED_ORIGINS") or ["http://localhost:3000", "http://127.0.0.1:3000"]
 
 # REST Framework settings
 REST_FRAMEWORK = {
@@ -240,20 +249,20 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "ROTATE_REFRESH_TOKENS": env.bool("ROTATE_REFRESH_TOKENS", default=True),
-    "BLACKLIST_AFTER_ROTATION": env.bool("BLACKLIST_AFTER_ROTATION", default=True),
+    "ROTATE_REFRESH_TOKENS": env_variables.bool("ROTATE_REFRESH_TOKENS") or True,
+    "BLACKLIST_AFTER_ROTATION": env_variables.bool("BLACKLIST_AFTER_ROTATION") or True,
     "AUTH_HEADER_TYPES": ("Bearer",),
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
 }
 
 # Email settings
-EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
-EMAIL_HOST = env("EMAIL_HOST", default="localhost")
-EMAIL_PORT = env.int("EMAIL_PORT", default=1025)
-EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
-EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=False)
+EMAIL_BACKEND = env_variables("EMAIL_BACKEND") or "django.core.mail.backends.console.EmailBackend"
+EMAIL_HOST = env_variables("EMAIL_HOST") or "localhost"
+EMAIL_PORT = env_variables.int("EMAIL_PORT") or 1025
+EMAIL_HOST_USER = env_variables("EMAIL_HOST_USER") or ""
+EMAIL_HOST_PASSWORD = env_variables("EMAIL_HOST_PASSWORD") or ""
+EMAIL_USE_TLS = env_variables.bool("EMAIL_USE_TLS") or False
 
 # Structlog configuration
 log_renderer = structlog.dev.ConsoleRenderer() if DEBUG else structlog.processors.JSONRenderer()
@@ -315,7 +324,7 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["console", "file"],
-            "level": env("LOGGING_LEVEL", default="INFO"),
+            "level": env_variables("LOGGING_LEVEL") or "INFO",
             "propagate": False,
         },
         "django.db.backends": {
@@ -356,10 +365,10 @@ ADMINS = [("Admin Name", "admin@example.com")]
 
 # Feature Flags
 
-FEATURE_X_ENABLED = env.bool("FEATURE_X_ENABLED", default=False)
+FEATURE_X_ENABLED = env_variables.bool("FEATURE_X_ENABLED") or False
 
 
 # Testing & Coverage
-TESTING = env.bool("TESTING", default=True)
+TESTING = env_variables.bool("TESTING") or True
 if TESTING:
     DATABASES["default"] = {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}

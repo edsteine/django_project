@@ -12,6 +12,9 @@ import sys
 # from environ import Env
 from environ import Env  # type: ignore[import-untyped]
 
+# Constants for environment types
+ENV_DEV = "dev"
+
 
 def main() -> None:
     """Set up and run Django management commands.
@@ -28,15 +31,20 @@ def main() -> None:
         ImproperlyConfigured: If Django settings are not properly configured.
 
     """
+    # TODO(Adel/2024-12-22): Don't forget about using config.
+    # 003
+    # # Specify custom .env location
+    # config = Config(RepositoryEnv('.env'))
+    # DEBUG = config('DEBUG', default=False, cast=bool)
 
+    # Initialize the Env object to load and parse environment variables
     env_variables = Env()
-
     # Determine the environment (development or production)
-    environment: str = env_variables.str("DJANGO_ENVIRONMENT") or "dev"  # Default to dev if not specified
+    environment: str = env_variables("DJANGO_ENVIRONMENT") or ENV_DEV
 
     # Load environment variables based on the environment
-    if environment == "dev":
-        env_variables.read_env(overwrite=True)
+    if environment == ENV_DEV:
+        env_variables.read_env(overwrite=True)  # Load .env file for development environment
 
     settings_module: str = env_variables.str("DJANGO_SETTINGS_MODULE") or "config_project.settings.dev_config"
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", settings_module)
