@@ -20,7 +20,7 @@ ENV_PROD = "prod"
 env_variables = Env()
 
 # Determine the environment (development or production)
-environment: str = env_variables("DJANGO_ENVIRONMENT", default=ENV_DEV)
+environment: str = env_variables("DJANGO_ENVIRONMENT") or ENV_DEV
 
 # Configure logging based on environment
 log_level = logging.INFO if environment == ENV_DEV else logging.INFO
@@ -32,8 +32,8 @@ logger = logging.getLogger(__name__)
 #     env_variables.read_env(overwrite=True)  # Load .env file for development environment
 
 # Fetch encryption settings from the environment
-ENCRYPTION_KEY: str = env_variables("ENCRYPTION_KEY", default="")
-ENCRYPTION_ALGORITHM: str = env_variables("ENCRYPTION_ALGORITHM", default="")
+ENCRYPTION_KEY: str = env_variables.str("ENCRYPTION_KEY")
+ENCRYPTION_ALGORITHM: str = env_variables.str("ENCRYPTION_ALGORITHM")
 
 # Validate encryption settings
 try:
