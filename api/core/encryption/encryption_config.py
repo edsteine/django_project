@@ -1,26 +1,47 @@
-"""api/core/encryption/encryption_config.py
-Encryption configuration.
-
-Defines encryption settings, schemes, and behavior, including the
-encryption key and the algorithm used.
+"""
+File: api/core/encryption/encryption_config.py
+Date updated: 2024-12-21
+Author: Adil AJDAA
+Email: a.ajdaa@outlook.com
+Project: Ed Project
+Description: Configures encryption settings, including key and algorithm, from environment variables.
+Used Libraries: environ, logging
 """
 
-# Import the Env class from the `environ` library to manage environment variables.
-# from environ import Env
+import logging
 
-# Uncommented import, with type ignore (used to bypass type checking if required)
 from environ import Env  # type: ignore[import-untyped]
 
-# Initialize the Env object to load and parse environment variables.
+# Constants for environment types
+ENV_DEV = "dev"
+ENV_PROD = "prod"
+
+# Initialize the Env object to load and parse environment variables
 env_variables = Env()
 
-# Load environment variables from a `.env` file. Ensure `.env` exists in the project root.
-# Env.read_env(".env")
-Env.read_env()
+# Determine the environment (development or production)
+environment: str = env_variables("DJANGO_ENVIRONMENT", default=ENV_DEV)
 
-# Type annotations ensure type safety for variables.
-# Fetch the encryption key from the environment variables.
-ENCRYPTION_KEY: str = env_variables("ENCRYPTION_KEY")
+# Configure logging based on environment
+log_level = logging.INFO if environment == ENV_DEV else logging.INFO
+logging.basicConfig(level=log_level)
+logger = logging.getLogger(__name__)
 
-# Fetch the encryption algorithm from the environment variables.
-ENCRYPTION_ALGORITHM: str = env_variables("ENCRYPTION_ALGORITHM")
+# Load environment variables based on the environment
+# if environment == ENV_DEV:
+#     env_variables.read_env(overwrite=True)  # Load .env file for development environment
+
+# Fetch encryption settings from the environment
+ENCRYPTION_KEY: str = env_variables("ENCRYPTION_KEY", default="")
+ENCRYPTION_ALGORITHM: str = env_variables("ENCRYPTION_ALGORITHM", default="")
+
+# Validate encryption settings
+try:
+    if not ENCRYPTION_KEY:
+        raise ValueError(f"No encryption key found in {environment} environment.")
+    if not ENCRYPTION_ALGORITHM:
+        raise ValueError(f"No encryption algorithm found in {environment} environment.")
+    logger.info("%s encryption settings are securely configured.", environment.capitalize())
+except ValueError as e:
+    logger.info("Configuration Error: %s", e)
+    raise  # Ensure invalid settings stop the application

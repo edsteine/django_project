@@ -29,7 +29,7 @@ FIXTURES_DIR := fixtures
 UNIT_TESTS := tests/unit
 INTEGRATION_TESTS := tests/integration
 E2E_TESTS := tests/e2e
-ALL_TESTS := tests
+ALL_TESTS :=  $(UNIT_TESTS) $(INTEGRATION_TESTS) $(E2E_TESTS)
 
 # Docker Configuration
 DOCKER_COMPOSE := docker compose
@@ -117,9 +117,9 @@ update-dev: check-tools
 # =================================================================
 # Testing and Quality Assurance
 # =================================================================
-.PHONY: test test-unit test-integration test-e2e pytest-trace coverage validate
+.PHONY: all-test unit integration e2e trace coverage validate
 
-test:
+all-test:
 	@echo "$(BLUE)🧪 Running all tests...$(NC)"
 	pytest \
 		--cov=$(PROJECT_NAME) \
@@ -130,31 +130,31 @@ test:
 		$(ALL_TESTS)
 	@echo "$(GREEN)✅ All tests complete$(NC)"
 
-test-unit:
+unit:
 	@echo "$(BLUE)🧪 Running unit tests...$(NC)"
 	pytest $(UNIT_TESTS) \
 		--cov=$(PROJECT_NAME) \
 		--cov-report=term-missing \
 		-v -m "not integration and not e2e"
 
-test-integration:
+integration:
 	@echo "$(BLUE)🧪 Running integration tests...$(NC)"
 	pytest $(INTEGRATION_TESTS) \
 		--cov=$(PROJECT_NAME) \
 		--cov-report=term-missing \
 		-v -m "integration"
 
-test-e2e:
+e2e:
 	@echo "$(BLUE)🧪 Running end-to-end tests...$(NC)"
 	pytest $(E2E_TESTS) \
 		--cov=$(PROJECT_NAME) \
 		--cov-report=term-missing \
 		-v -m "e2e"
 
-pytest-trace:
+trace:
 	pytest --trace-config
 
-coverage: test
+coverage: all-test
 	@echo "$(BLUE)📊 Generating coverage reports...$(NC)"
 	coverage combine
 	coverage report
@@ -300,6 +300,11 @@ environment-start:
 	chmod +x ./scripts/dev/dev_environment_start.sh
 	./scripts/dev/dev_environment_start.sh
 	@echo "$(GREEN)✅ environment started$(NC)"
+create-test-files:
+	@echo "$(BLUE)🚀 Starting generate_test_structure...$(NC)"
+	chmod +x ./scripts/dev/generate_test_structure.sh
+	./scripts/dev/generate_test_structure.sh
+	@echo "$(GREEN)✅ generate_test_structure started$(NC)"
 
 # =================================================================
 # Database Management
@@ -349,7 +354,7 @@ pre-commit-check: clean
 	@echo "$(GREEN)✓ Pre-commit checks complete$(NC)"
 
 
-commit-push-reset-install:clean install-dev
+commit-push-reset-install:clean install-dev lint
 	@echo "$(BLUE)🎯 Committing changes...$(NC)"
 	git init
 	git remote get-url origin || git remote add origin https://github.com/edsteine/django_project.git
@@ -363,8 +368,9 @@ commit-push-reset-install:clean install-dev
 	git push --force --set-upstream origin main
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
 
-commit-push-reset:
+commit-push-reset: lint
 	@echo "$(BLUE)🎯 Committing changes...$(NC)"
+	git config --global http.postBuffer 524288000
 	poetry lock --no-update
 	git init
 	git remote get-url origin || git remote add origin https://github.com/edsteine/django_project.git
@@ -378,8 +384,9 @@ commit-push-reset:
 	git push --force --set-upstream origin main
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
 
-commit-push:
+commit-push:lint
 	@echo "$(BLUE)📝 Committing and pushing changes...$(NC)"
+	git config --global http.postBuffer 524288000
 	poetry lock --no-update
 	git add .|| true
 	git commit -m "Update: $(shell date '+%Y-%m-%d %H:%M:%S')"|| true

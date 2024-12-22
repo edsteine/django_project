@@ -1,75 +1,79 @@
-"""api/core/encryption/encryption_fields.py
-Custom encrypted fields.
-
-Implements encryption on model fields by using the Fernet encryption
-scheme to securely store and retrieve encrypted values.
+"""
+File: api/core/encryption/encryption_fields.py
+Date updated: 2024-12-21
+Author: Adil AJDAA
+Email: a.ajdaa@outlook.com
+Project: Ed Project
+Description: Custom encrypted fields using the Fernet encryption scheme for secure data storage.
+Used Libraries: cryptography.fernet, django.db
 """
 
-from typing import Any
+import logging
 
 from api.core.encryption.encryption_config import ENCRYPTION_KEY
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from django.db import models
 from django.db.backends.base.base import BaseDatabaseWrapper
 from django.db.models import Model
 
+# Set up logging
+logger = logging.getLogger(__name__)
+ENCRYPTION_KEY_LENGTH = 44
 
-class EncryptedCharField(models.CharField[str, str]):
-    """Custom Django model field that encrypts and decrypts data using the Fernet encryption scheme.
 
-    This field can be used to securely store sensitive data in the database.
-    It encrypts data when saving to the database and decrypts it when retrieving.
-
-    Attributes:
-        key (Fernet): The Fernet encryption key used to encrypt and decrypt data.
-
-    """
+class EncryptedCharField(models.CharField):  # type: ignore
+    # class EncryptedCharField(models.CharField[str, str]):
+    """Django model field that encrypts and decrypts data using Fernet encryption."""
 
     key: Fernet
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
-        """
-        Initializes the EncryptedCharField with the given arguments and
-        sets up the Fernet encryption key.
+    # def __init__(self, *args: Any, **kwargs: Any) -> None:
 
-        Args:
-            *args: Additional arguments passed to the parent class.
-            **kwargs: Additional keyword arguments passed to the parent class.
-        """
-        super().__init__(*args, **kwargs)
-        self.key = Fernet(ENCRYPTION_KEY)
+    def __init__(self, *args: tuple, **kwargs: dict) -> None:  # type: ignore
+        super().__init__(*args, **kwargs)  # type: ignore
+
+        # Validate encryption key length
+        if len(ENCRYPTION_KEY) != ENCRYPTION_KEY_LENGTH:
+            raise ValueError("Invalid ENCRYPTION_KEY length.")
+
+        try:
+            self.key = Fernet(ENCRYPTION_KEY)
+        except ValueError as e:
+            logger.error("Invalid ENCRYPTION_KEY: %s", e)
+            raise
 
     def get_prep_value(self, value: str | None) -> str | None:
-        """Prepares the value for storage by encrypting it.
-
-        Args:
-            value (Optional[str]): The value to be encrypted.
-
-        Returns:
-            Optional[str]: The encrypted value as a string, or None if no value.
-
-        """
+        """Encrypts the value before storing it in the database."""
         if value is None:
             return None
-        return self.key.encrypt(value.encode()).decode()
+
+        try:
+            return self.key.encrypt(value.encode()).decode()
+        except Exception as e:
+            logger.error("Encryption failed: %s", e)
+            raise ValueError("Encryption failed.") from e
 
     def from_db_value(self, value: str | None, expression: Model, connection: BaseDatabaseWrapper) -> str | None:
-        """Decrypts the stored value when retrieving it from the database.
-
-        Args:
-            value (Optional[str]): The encrypted value from the database.
-            expression: The SQL expression used to fetch the value.
-            connection: The database connection.
-
-        Returns:
-            Optional[str]: The decrypted value, or None if no value.
-
-        """
+        """Decrypts the value when retrieving it from the database."""
         if value is None:
             return None
 
-        # Suppress unused argument warnings explicitly
-        _ = expression
-        _ = connection
+        _ = expression  # Suppress unused argument warning
+        _ = connection  # Suppress unused argument warning
 
-        return self.key.decrypt(value.encode()).decode()
+        try:
+            return self.key.decrypt(value.encode()).decode()
+        except InvalidToken as e:
+            logger.error("Decryption failed: Invalid token. %s", e)
+            raise ValueError("Decryption failed. Invalid token.") from e
+        except Exception as e:
+            logger.error("Decryption failed: %s", e)
+            raise ValueError("Decryption failed.") from e
+
+
+# from django.db import models
+# from api.core.encryption.encryption_fields import EncryptedCharField
+
+# class User(models.Model):
+#     username = models.CharField(max_length=100)
+#     api_key = EncryptedCharField(max_length=255)

@@ -2,13 +2,13 @@ from __future__ import annotations  # Add this for better type hinting
 
 from typing import ClassVar, cast
 
+from api.V1.resources.users.user_managers import CustomUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 # Change this import to avoid circular import
-from .user_managers import CustomUserManager
 
 
 class User(AbstractBaseUser, PermissionsMixin):

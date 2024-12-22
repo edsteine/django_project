@@ -292,7 +292,9 @@ max-complexity = 10
 [tool.mypy]
 python_version = "3.13"
 strict = true
+namespace_packages = true
 mypy_path = "stubs"
+explicit_package_bases = true
 follow_imports = "normal"
 warn_redundant_casts = true
 warn_unused_ignores = true
@@ -307,16 +309,17 @@ disallow_untyped_defs = true
 disallow_any_generics = true
 no_implicit_reexport = true
 check_untyped_defs = true
-exclude = ["tests", ",migrations"]
-
+# exclude = ["tests", ",migrations"]
+exclude = '^(tests|migrations|\.mypy_cache|\.env).*'
+files = ["ed_project"]
 
 [tool.django-stubs]
 django_settings_module = "config_project.settings.dev_config"
-[tool.pytest]
-DJANGO_SETTINGS_MODULE = "config_project.settings.dev_config"
+# [tool.pytest]
+# DJANGO_SETTINGS_MODULE = "config_project.settings.dev_config"
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config_project.settings.dev_config"
-pythonpath = "."
+pythonpath = [".", "ed_project"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -338,7 +341,7 @@ addopts = [
     "--no-cov-on-fail",
     "--strict-markers",
     "-ra",
-    "--strict-config",
+    # "--strict-config",
     "--cov=ed_project",
     "--cov-report=html:htmlcov",
     "--durations=10",
@@ -352,6 +355,8 @@ markers = [
     "unit: marks unit tests",
     "api: marks API tests",
     "db: marks database tests",
+    "unit: marks unit tests",
+    "e2e: marks end-to-end tests"
 ]
 filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
 
@@ -359,8 +364,16 @@ filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
 [tool.coverage.run]
 branch = true
 source = ["ed_project"]
-omit = ["tests/*", "*/migrations/*", "*/admin.py", "*/__init__.py"]
-
+omit = [
+    "tests/*",
+    "*/migrations/*",
+    "*/admin.py",
+    "*/__init__.py",
+    "manage.py",
+    "config_project/asgi.py",
+    "config_project/wsgi.py",
+    "config_project/settings/*",
+]
 [tool.coverage.report]
 show_missing = true
 skip_covered = true

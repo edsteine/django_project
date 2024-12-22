@@ -6,7 +6,7 @@
 
 # Load environment variables from a `.env` file. Ensure `.env` exists in the project root.
 # Env.read_env(".env")
-# Env.read_env()
+# Env.read_env(overwrite=True)
 
 # ENVIRONMENT = env_variables("DJANGO_ENVIRONMENT")  # Default to 'dev' if not set
 # if ENVIRONMENT == "prod":

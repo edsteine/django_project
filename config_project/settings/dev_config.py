@@ -11,7 +11,7 @@ from environ import Env  # type: ignore[import-untyped]
 
 # Initialize environment
 env = Env()
-Env.read_env()
+Env.read_env(overwrite=True)
 
 # Base directory setup
 BASE_DIR = Path(__file__).resolve().parent.parent.parent

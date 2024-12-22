@@ -1,5 +1,7 @@
 from typing import Any
 
+from api.V1.resources.users.models import User
+from api.V1.resources.users.user_serializers import UserSerializer
 from django.db.models import QuerySet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -7,9 +9,6 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
-
-from .models import User
-from .user_serializers import UserSerializer
 
 
 class UserPagination(PageNumberPagination):

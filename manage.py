@@ -28,13 +28,17 @@ def main() -> None:
         ImproperlyConfigured: If Django settings are not properly configured.
 
     """
+
     env_variables = Env()
 
-    # Load environment variables from a `.env` file. Ensure `.env` exists in the project root.
-    # Env.read_env(".env")
-    Env.read_env()
+    # Determine the environment (development or production)
+    environment: str = env_variables.str("DJANGO_ENVIRONMENT", default="dev")  # Default to dev if not specified
 
-    settings_module = env_variables("DJANGO_SETTINGS_MODULE", default="config_project.settings.dev_config")
+    # Load environment variables based on the environment
+    if environment == "dev":
+        env_variables.read_env(overwrite=True)
+
+    settings_module: str = env_variables.str("DJANGO_SETTINGS_MODULE", default="config_project.settings.dev_config")
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", settings_module)
 
     try:
