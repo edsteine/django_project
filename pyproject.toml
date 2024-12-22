@@ -198,71 +198,8 @@ select = [
     # "D",     # pydocstyle (docstring conventions)
 ]
 ignore = [
-    # Basic Coding Conventions (Ignore)
-    # "N815",    # Variable should not be mixedCase
-    # "N818",    # Exception name should have Error suffix
-    # "Q000",    # Strings should use double quotes instead of single quotes for consistency
-
-    # # Import and Module Related
-    # "F401",    # Unused imports (useful to keep in __init__.py)
-    # "PLC0414", # Ignore duplicate import checks for __init__ files
-    # "F403",    # `from .base_config import *` used
-    # "F405",    # May be undefined or defined from star imports
-
-    # # Error and Exception Handling
-    # "B904",    # Raise exceptions with raise ... from err or raise ... from None
-    # "S101",    # Use of assert detected
-    # "B008",    # Do not perform function calls in argument defaults
-
-    # # Formatting and Style
-    "COM812", # Missing trailing comma (conflicts with formatter)
-    # "E501",    # Line length handled by formatter
-    # "A003",    # Class attribute shadowing built-in
-
-    # # Argument and Function Related
-    # "ARG001",  # Unused function argument
-    # "ARG002",  # Unused method argument
-    # "ARG005",  # Unused lambda argument
-    # "PLR0913", # Allow more function arguments for Django views
-
-    # # Code Cleanliness
-    # "F841",    # Local variable assigned but never used
-    # "T201",    # print found
+    "COM812",
     "ERA001", # Found commented-out code
-    # "PLR2004", # Magic value used in comparison
-    # "RUF012",  # Mutable class attributes should be annotated with typing.ClassVar
-
-    # # Documentation (Docstring) Related
-    # "D100",    # Missing docstring in public module
-    # "D101",    # Missing docstring in public class
-    # "D102",    # Missing docstring in public method
-    # "D103",    # Missing docstring in public function
-    # "D104",    # Missing docstring in public package
-    # "D105",    # Missing docstring in magic method
-    # "D106",    # Missing docstring in nested class
-
-    # # Type Annotation Related
-    # "ANN001",  # Missing type annotation for function argument
-    # "ANN002",  # Missing type annotation for `*args`
-    # "ANN003",  # Missing type annotation for `**kwargs`
-    # "ANN201",  # Missing return type annotation for public function
-    # "ANN202",  # Missing return type annotation for private function
-    # "ANN204",  # Missing return type annotation for special method
-    # "ANN206",  # Missing return type annotation for staticmethod
-
-    # # Docstring Formatting
-    # "D200",    # One-line docstring should fit on one line
-    # "D202",    # No blank lines allowed before class docstring
-    # "D203",    # One blank line required before class definitions (ignored when using black)
-    # "D205",    # 1 blank line required between summary line and description
-    # "D212",    # Multi-line docstring summary should start at the first line
-    # "D213",    # Multi-line docstring summary should start at the second line
-    # "D400",    # First line should end with a period
-    # "D401",    # First line should be in imperative mood
-    # "D413",    # Missing blank line after last section in docstring
-    # "D415",    # First line should end with a period, question mark, or exclamation point
-
-    # "DJ001",    # Avoid using `null=True` on string-based fields like CharField, as it is unnecessary and may lead to inconsistent data
 
 ]
 
