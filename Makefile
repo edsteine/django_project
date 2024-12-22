@@ -29,7 +29,7 @@ FIXTURES_DIR := fixtures
 UNIT_TESTS := tests/unit
 INTEGRATION_TESTS := tests/integration
 E2E_TESTS := tests/e2e
-ALL_TESTS :=  $(UNIT_TESTS) $(INTEGRATION_TESTS) $(E2E_TESTS)
+ALL_TESTS := $(UNIT_TESTS) $(INTEGRATION_TESTS) $(E2E_TESTS)
 
 # Docker Configuration
 DOCKER_COMPOSE := docker compose
@@ -43,7 +43,12 @@ K8S_CONTEXT := dev-cluster
 
 # Define a helper to run a command and print it in yellow
 RUN = @printf "$(YELLOW)%s$(NC)\n" "$1" && eval $1
-
+# Test configuration variables
+PYTEST_COMMON_FLAGS := -v --cov=$(PROJECT_NAME) --cov-report=term-missing
+PYTEST_PARALLEL := -n auto
+PYTEST_FAIL_FAST := --maxfail=1
+PYTEST_CACHE := --cache-clear
+TIMESTAMP := $(shell date +'%Y%m%d_%H%M%S')
 # =================================================================
 # Help Command
 # =================================================================
@@ -72,141 +77,125 @@ help:
 # =================================================================
 .PHONY: install-dev update-dev check-tools
 
-# Check if required tools are installed
 check-tools:
-	@command -v poetry >/dev/null 2>&1 || { echo "$(RED)❌ Poetry is not installed$(NC)"; exit 1; }
-	@command -v pre-commit >/dev/null 2>&1 || { echo "$(RED)❌ pre-commit is not installed$(NC)"; exit 1; }
+	@echo "$(BLUE)🔍 VCheck if required tools are installe...$(NC)"
+	@command -v poetry >/dev/null  || { echo "$(RED)❌ Poetry is not installed$(NC)"; exit 1; }
+	@command -v pre-commit >/dev/null  || { echo "$(RED)❌ pre-commit is not installed$(NC)"; exit 1; }
 	@echo "$(GREEN)✓ Required tools are installed$(NC)"
 
+validate:
+	@echo "$(BLUE)🔍 Validating development environment...$(NC)"
+	poetry check
+	@echo "$(YELLOW) poetry run pytest --version >/dev/null $(NC)"
+	@poetry run pytest --version >/dev/null || { echo "$(BLUE)⚠️ pytest not installed$(NC)"; exit 1; }
+	@echo "$(YELLOW) poetry run mypy --version >/dev/null $(NC)"
+	@poetry run mypy --version >/dev/null  || { echo "$(BLUE)⚠️ mypy not installed$(NC)"; exit 1; }
+	@echo "$(YELLOW) poetry run ruff --version >/dev/null $(NC)"
+	@poetry run ruff --version >/dev/null  || { echo "$(BLUE)⚠️ ruff not installed$(NC)"; exit 1; }
+	@echo "$(GREEN)✅ Validation complete$(NC)"
 
 # Install development environment
 install-dev: check-tools clean
 	@echo "$(BLUE)📦 Installing project...$(NC)"
-
-	poetry lock --no-update
-	poetry install --with dev --sync || { echo "$(RED)❌ Failed to install dependencies$(NC)"; exit 1; }
-
-	@echo "$(YELLOW)⚡ Setting up pre-commit hooks...$(NC)"
-	pre-commit install --install-hooks \
-		--hook-type pre-commit \
-		--hook-type pre-push \
-		--hook-type commit-msg || { echo "$(RED)❌ Failed to install pre-commit hooks$(NC)"; exit 1; }
-
-	@echo "$(YELLOW)🔍 Validating installation...$(NC)"
-	poetry check
-	poetry run pre-commit run --all-files || true
+	$(call RUN, poetry lock --no-update)
+	$(call RUN, poetry install --with dev --sync)
+	$(call RUN, pre-commit install --install-hooks --hook-type pre-commit --hook-type pre-push --hook-type commit-msg)
+	$(call RUN, poetry check)
 	@echo "$(GREEN)✅ Development environment ready$(NC)"
 
 # Update dependencies and tools
 update-dev: check-tools
 	@echo "$(BLUE)🔄 Updating dependencies...$(NC)"
-
-	poetry lock --no-update
-	poetry check || { echo "$(RED)❌ Poetry check failed$(NC)"; exit 1; }
-
-	@echo "$(YELLOW)📝 Showing outdated packages...$(NC)"
-	poetry show --outdated
-
-	@echo "$(YELLOW)⬆️  Updating packages...$(NC)"
-	poetry update || { echo "$(RED)❌ Failed to update dependencies$(NC)"; exit 1; }
-
-	@echo "$(YELLOW)🔄 Updating pre-commit hooks...$(NC)"
-	pre-commit autoupdate
-
+	$(call RUN, git config --global http.postBuffer 524288000)
+	$(call RUN, poetry lock --no-update)
+	$(call RUN, poetry check)
+	$(call RUN, poetry show --outdated)
+	$(call RUN, poetry update)
+	$(call RUN, pre-commit autoupdate)
 	@echo "$(GREEN)✅ Dependencies updated successfully$(NC)"
 
 
 # =================================================================
 # Testing and Quality Assurance
 # =================================================================
-.PHONY: all-test unit integration e2e trace coverage validate
+.PHONY: all-tests unit integration e2e trace coverage validate
 
-all-test:
+all-tests:
 	@echo "$(BLUE)🧪 Running all tests...$(NC)"
-	pytest \
-		--cov=$(PROJECT_NAME) \
-		--cov-report=term-missing \
+	pytest $(PYTEST_COMMON_FLAGS) \
 		--cov-report=html \
 		--cov-report=xml \
 		--cov-fail-under=$(COVERAGE_THRESHOLD) \
+		$(PYTEST_PARALLEL) \
 		$(ALL_TESTS)
 	@echo "$(GREEN)✅ All tests complete$(NC)"
 
 unit:
 	@echo "$(BLUE)🧪 Running unit tests...$(NC)"
-	pytest $(UNIT_TESTS) \
-		--cov=$(PROJECT_NAME) \
-		--cov-report=term-missing \
-		-v -m "not integration and not e2e"
+	pytest $(PYTEST_COMMON_FLAGS) \
+		-m "not integration and not e2e" \
+		$(PYTEST_PARALLEL) \
+		$(UNIT_TESTS)
+	@echo "$(GREEN)✅ Unit tests complete$(NC)"
 
 integration:
 	@echo "$(BLUE)🧪 Running integration tests...$(NC)"
-	pytest $(INTEGRATION_TESTS) \
-		--cov=$(PROJECT_NAME) \
-		--cov-report=term-missing \
-		-v -m "integration"
+	pytest $(PYTEST_COMMON_FLAGS) \
+		-m "integration" \
+		$(INTEGRATION_TESTS)
+	@echo "$(GREEN)✅ Integration tests complete$(NC)"
 
 e2e:
 	@echo "$(BLUE)🧪 Running end-to-end tests...$(NC)"
-	pytest $(E2E_TESTS) \
-		--cov=$(PROJECT_NAME) \
-		--cov-report=term-missing \
-		-v -m "e2e"
+	pytest $(PYTEST_COMMON_FLAGS) \
+		-m "e2e" \
+		$(E2E_TESTS)
+	@echo "$(GREEN)✅ E2E tests complete$(NC)"
 
 trace:
-	pytest --trace-config
+	@echo "$(BLUE)🧪 Running trace...$(NC)"
+	pytest --trace-config $(PYTEST_CACHE)
+	@echo "$(GREEN)✅ Trace complete$(NC)"
 
 coverage: all-test
 	@echo "$(BLUE)📊 Generating coverage reports...$(NC)"
-	coverage combine
+	coverage combine || true
 	coverage report
 	coverage html
 	@echo "$(GREEN)✅ Coverage reports generated$(NC)"
+	@echo "$(BLUE)📂 Coverage report available at htmlcov/index.html$(NC)"
 
-validate:
-	@echo "$(BLUE)🔍 Validating development environment...$(NC)"
-	poetry check
-	poetry run pytest --version >/dev/null 2>&1 || echo "$(YELLOW)⚠️  pytest not installed$(NC)"
-	poetry run mypy --version >/dev/null 2>&1 || echo "$(YELLOW)⚠️  mypy not installed$(NC)"
-	poetry run ruff --version >/dev/null 2>&1 || echo "$(YELLOW)⚠️  ruff not installed$(NC)"
-	pre-commit run --all-files || true
-	@echo "$(GREEN)✅ Validation complete$(NC)"
 # =================================================================
 # Quality Assurance
 # =================================================================
-.PHONY: lint security  mypy vulture-check security
+.PHONY: lint security mypy vulture security
 
 # Linting and formatting
 lint:
 	@echo "$(BLUE)📝 Formatting code...$(NC)"
-	poetry run ruff format . || { echo "$(RED)❌ Formatting failed$(NC)"; exit 1; }
-	@echo "$(GREEN)✓ Formatting complete$(NC)"
-	@echo "$(BLUE)🔍 Running linters...$(NC)"
-	poetry run ruff check . --fix || { echo "$(RED)❌ Ruff check failed$(NC)"; exit 1; }
+	$(call RUN, poetry run ruff format .)
+	$(call RUN, poetry run ruff check . --fix)
 	@echo "$(GREEN)✓ Lint complete$(NC)"
 
 mypy:
+	@echo "$(BLUE)📋 Load environment variables from .env file and export them to the shell...$(NC)"
+	$(call RUN, set -a; source .env; set +a)
 	@echo "$(BLUE)📋 Running type checks...$(NC)"
-	set -a; source .env; set +a
-	poetry run mypy . || { echo "$(RED)❌ Type checking failed$(NC)"; exit 1; }
+	$(call RUN, poetry run mypy .)
 	@echo "$(GREEN)✓ Type checking complete$(NC)"
 
 
 # Security checks
 security:
 	@echo "$(BLUE)🔒 Running security checks...$(NC)"
-
-	@echo "$(YELLOW)Running Bandit security checks...$(NC)"
-	poetry run bandit -r . || { echo "$(RED)❌ Bandit security check failed$(NC)"; exit 1; }
-
-	@echo "$(YELLOW)Running dependency audit...$(NC)"
-	poetry run pip-audit --ignore ed_project || { echo "$(YELLOW)⚠️  Security vulnerabilities found$(NC)"; }
-
+	$(call RUN, poetry run bandit -r .)
+	$(call RUN, poetry run pip-audit --ignore ed_project)
 	@echo "$(GREEN)✅ Security checks complete$(NC)"
 
-vulture-check:
-	@echo "$(BLUE)🔒 Running security checks...$(NC)"
-	poetry run vulture  || { echo "\033[0;31m❌ Vulture check failed\033[0m"; exit 1; }
+vulture:
+	@echo "$(BLUE)🔒 Running vulture checks...$(NC)"
+	$(call RUN, poetry run vulture)
+	@echo "$(GREEN)✅ vulture checks complete$(NC)"
 
 
 
@@ -217,67 +206,65 @@ vulture-check:
 
 status:
 	@echo "$(BLUE)📊 Checking migration status...$(NC)"
-	poetry run python manage.py showmigrations || { echo "$(RED)❌ Failed to show migrations$(NC)"; exit 1; }
+	$(call RUN, poetry run python manage.py showmigrations)
 	@echo "$(GREEN)✓ Migration status check complete$(NC)"
 
 migrate:
 	@echo "$(BLUE)🔄 Running database migrations...$(NC)"
-
-	@echo "$(YELLOW)Making migrations...$(NC)"
-	poetry run python manage.py makemigrations || { echo "$(RED)❌ Failed to make migrations$(NC)"; exit 1; }
-
-	@echo "$(YELLOW)Applying migrations...$(NC)"
-	poetry run python manage.py migrate || { echo "$(RED)❌ Failed to apply migrations$(NC)"; exit 1; }
-
-	poetry run python manage.py flush --noinput
-
-	poetry run python manage.py makemigrations users
+	@echo "$(BLUE)Making migrations...$(NC)"
+	$(call RUN,poetry run python manage.py makemigrations)
+	$(call RUN,poetry run python manage.py migrate)
+	$(call RUN,poetry run python manage.py flush --noinput)
+	$(call RUN,poetry run python manage.py makemigrations users)
 	@echo "$(GREEN)✅ Migrations complete$(NC)"
 
 superuser:
 	@echo "$(BLUE)👤 Creating superuser...$(NC)"
-	poetry run python manage.py createsuperuser
+	$(call RUN,poetry run python manage.py createsuperuser)
 	@echo "$(GREEN)✅ Superuser created$(NC)"
 
 runserver:
 	@echo "$(BLUE)🚀 Starting development server...$(NC)"
-	poetry run python manage.py runserver
+	$(call RUN,poetry run python manage.py runserver)
 
 shell:
 	@echo "$(BLUE)🐚 Starting Django shell...$(NC)"
-	poetry run python manage.py shell_plus  --ipython
+	$(call RUN,poetry run python manage.py shell_plus --ipython)
 db-shell:
 	@echo "$(BLUE)🐚 Starting Django shell...$(NC)"
-	poetry run python manage.py dbshell
+	$(call RUN,poetry run python manage.py dbshell)
 
 collectstatic:
 	@echo "$(BLUE)📦 Collecting static files...$(NC)"
-	poetry run python manage.py collectstatic --noinput
-
+	$(call RUN,poetry run python manage.py collectstatic --noinput)
 
 db-backup:
 	@echo "$(BLUE)💾 Creating database backup...$(NC)"
 	mkdir -p $(BACKUP_DIR)
-	poetry run python manage.py dumpdata --indent 2 > $(BACKUP_DIR)/backup_$(CURRENT_TIME).json
+	$(call RUN, poetry run python manage.py dumpdata --indent 2 > $(BACKUP_DIR)/backup_$(CURRENT_TIME).json)
 	@echo "$(GREEN)✅ Backup created$(NC)"
+BACKUP_FILE="backups/backup_20241222_171440.json"
 db-restore:
 	@echo "$(BLUE)📥 Restoring database...$(NC)"
-	@if [ -z "$(BACKUP_FILE)" ]; then \
-		echo "$(RED)❌ Please specify BACKUP_FILE to restore from$(NC)"; \
-		exit 1; \
+	@if [ -z "$(BACKUP_FILE)" ]; then echo "$(RED)❌ Please specify BACKUP_FILE to restore from$(NC)"; exit 1; \
 	fi
-	poetry run python manage.py loaddata $(BACKUP_FILE)
+	$(call RUN,poetry run python manage.py loaddata $(BACKUP_FILE))
 	@echo "$(GREEN)✅ Database restored$(NC)"
 
 db-seed:
 	@echo "$(BLUE)🌱 Seeding database...$(NC)"
-	poetry run python manage.py loaddata $(FIXTURES_DIR)/*.json
+	$(call RUN,poetry run python manage.py loaddata $(FIXTURES_DIR)/*.json)
 	@echo "$(GREEN)✅ Database seeded$(NC)"
 
 cache-clear:
-	@echo "$(BLUE)🗑️ Clearing cache...$(NC)"
-	poetry run python manage.py clear_cache
-
+	@echo "$(BLUE)🗑️ Checking if Redis is running...$(NC)"
+	@if redis-cli ping > /dev/null 2>&1; then \
+		echo "$(GREEN) Redis is running, clearing cache...$(NC)"; \
+		echo "$(YELLOW) poetry run python manage.py clear_cache$(NC)"; \
+		poetry run python manage.py clear_cache; \
+	else \
+		echo "$(RED)Redis is not running! Cache not cleared.$(NC)"; \
+	fi
 
 
 # =================================================================
@@ -334,7 +321,7 @@ postgress-start:
 
 db-reset: clean
 	@echo "$(BLUE)🔄 Resetting database...$(NC)"
-	chmod +x ./scripts/dev/dev_database_create.sh
+	chmod +x ./scripts/dev/dev_database_delete.sh
 	chmod +x ./scripts/dev/dev_database_create.sh
 	./scripts/dev/dev_database_delete.sh
 	./scripts/dev/dev_database_create.sh
@@ -346,47 +333,45 @@ db-reset: clean
 # =================================================================
 # Git Commands
 # =================================================================
-.PHONY: commit-push
+.PHONY: commit-push clean-git pre-commit-check commit-push-reset-install commit-push-reset
 
 
 pre-commit-check: clean
 	@echo "$(BLUE)🔄 Running pre-commit checks...$(NC)"
-	poetry lock --no-update
-	poetry run pre-commit run --all-files || { echo "$(YELLOW)⚠️  Pre-commit checks found issues$(NC)"; }
+	$(call RUN, git config --global http.postBuffer 524288000)
+	$(call RUN, poetry lock --no-update)
+	$(call RUN, poetry run pre-commit run --all-files)
 	@echo "$(GREEN)✓ Pre-commit checks complete$(NC)"
 
 
 commit-push-reset-install:clean install-dev lint
 	@echo "$(BLUE)🎯 Committing changes...$(NC)"
-	git init
-	git remote get-url origin || git remote add origin https://github.com/edsteine/django_project.git
-	git branch -M main
-	# Add empty files or folders by ensuring .gitkeep or other placeholders are added
-	find . -type d -empty -exec touch {}/.gitkeep \; # Add .gitkeep to empty folders
-	git add . # Add all changes, including empty directories with .gitkeep
-	git commit -m "Update: $(shell date '+%Y-%m-%d %H:%M:%S')" || true
+	find . -type d -empty -exec touch {}/.gitkeep \;
+	$(call RUN, git init)
+	$(call RUN, git remote get-url origin || git remote add origin https://github.com/edsteine/django_project.git)
+	$(call RUN, git branch -M main)
+	$(call RUN, git add .)
+	$(call RUN, git commit -m "Update_$(TIMESTAMP)")
 	@echo "$(GREEN)✅ Changes committed$(NC)"
 	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
-	git push --force --set-upstream origin main
+	$(call RUN, git push --force --set-upstream origin main)
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
 
 commit-push-reset: lint
 	@echo "$(BLUE)🎯 Committing changes...$(NC)"
-	git config --global http.postBuffer 524288000
-	poetry lock --no-update
-	git init
-	git remote get-url origin || git remote add origin https://github.com/edsteine/django_project.git
-	git branch -M main
-	# Add empty files or folders by ensuring .gitkeep or other placeholders are added
-	find . -type d -empty -exec touch {}/.gitkeep \; # Add .gitkeep to empty folders
-	git add . # Add all changes, including empty directories with .gitkeep
-	git commit -m "Update: $(shell date '+%Y-%m-%d %H:%M:%S')" || true
+	find . -type d -empty -exec touch {}/.gitkeep \;
+	$(call RUN, git config --global http.postBuffer 524288000)
+	$(call RUN, poetry lock --no-update)
+	$(call RUN, git init)
+	$(call RUN, git remote get-url origin || git remote add origin https://github.com/edsteine/django_project.git)
+	$(call RUN, git branch -M main)
+	$(call RUN, git add .)
+	$(call RUN, git commit -m "Update_$(TIMESTAMP)")
 	@echo "$(GREEN)✅ Changes committed$(NC)"
 	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
-	git push --force --set-upstream origin main
+	$(call RUN, git push --force --set-upstream origin main)
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
 
-TIMESTAMP := $(shell date +'%Y%m%d_%H%M%S')
 
 commit-push: lint
 	@echo "$(BLUE)📝 Committing and pushing changes...$(NC)"
@@ -399,43 +384,34 @@ commit-push: lint
 	$(call RUN, git push --force --set-upstream origin main)
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
 
+clean-git: clean
+	git config --global http.postBuffer 1048576000
+	git gc --prune=now
+	git remote prune origin
+	git config --global core.compression 9
+	git config --global http.lowSpeedLimit 500
+	git config --global http.lowSpeedTime 600
 
-commit-push2: lint
-	@echo "$(BLUE)📝 Committing and pushing changes...$(NC)"
-	git config --global http.postBuffer 524288000
-	poetry lock --no-update
-
-	@echo "$(BLUE)🔄 Staging changes...$(NC)"
-	git add . || { echo "$(RED)❌ Failed to stage changes$(NC)"; exit 1; }
-	DT=$(shell date '+%Y-%m-%d %H:%M:%S')
-	@echo "$(BLUE)🔒 Committing changes...$(NC)"
-	git commit -m "Update: DT" || { echo "$(YELLOW)⚠️ No changes to commit$(NC)"; exit 0; }
-
-	@echo "$(GREEN)✅ Changes committed$(NC)"
-	@echo "$(BLUE)🚀 Pushing changes...$(NC)"
-	git push --force --set-upstream origin main || { echo "$(RED)❌ Failed to push changes$(NC)"; exit 1; }
-
-	@echo "$(GREEN)✅ Changes pushed$(NC)"
 
 clean:
 	@echo "$(BLUE)🧹 Cleaning project...$(NC)"
-	find . -type d -name "__pycache__" -exec rm -rf {} +
-	find . -type d -name ".pytest_cache" -exec rm -rf {} +
-	find . -type d -name ".coverage" -exec rm -rf {} +
-	find . -type d -name ".mypy_cache" -exec rm -rf {} +
-	find . -type d -name ".ruff_cache" -exec rm -rf {} +
-	find . -type d -name "dist" -exec rm -rf {} +
-	find . -type d -name "build" -exec rm -rf {} +
-	find . -type d -name "*.egg-info" -exec rm -rf {} +
-	find . -type d -name "htmlcov" -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete
-	find . -type f -name "*.pyo" -delete
-	find . -type f -name "*.pyd" -delete
-	find . -type f -name ".coverage" -delete
-	find . -type f -name "coverage.xml" -delete
-	poetry env remove --all
-	pre-commit clean
-	rm -rf .pytest_cache .coverage .mypy_cache .ruff_cache
+	@find . -type d -name "__pycache__" -exec rm -rf {} +
+	@find . -type d -name ".pytest_cache" -exec rm -rf {} +
+	@find . -type d -name ".coverage" -exec rm -rf {} +
+	@find . -type d -name ".mypy_cache" -exec rm -rf {} +
+	@find . -type d -name ".ruff_cache" -exec rm -rf {} +
+	@find . -type d -name "dist" -exec rm -rf {} +
+	@find . -type d -name "build" -exec rm -rf {} +
+	@find . -type d -name "*.egg-info" -exec rm -rf {} +
+	@find . -type d -name "htmlcov" -exec rm -rf {} +
+	@find . -type f -name "*.pyc" -delete
+	@find . -type f -name "*.pyo" -delete
+	@find . -type f -name "*.pyd" -delete
+	@find . -type f -name ".coverage" -delete
+	@find . -type f -name "coverage.xml" -delete
+	@poetry env remove --all
+	@pre-commit clean
+	@rm -rf .pytest_cache .coverage .mypy_cache .ruff_cache
 	@echo "$(GREEN)✅ Clean complete$(NC)"
 
 # =================================================================
@@ -484,4 +460,4 @@ docs-serve:
 .DEFAULT_GOAL := help
 
 env:
-	set -a; source .env; set +a  && mypy .
+	set -a; source .env; set +a && mypy .

@@ -25,16 +25,18 @@ build/
 # IDE configuration directories (e.g., VSCode, PyCharm, etc.)
 .idea/
 .vscode/
-
+backups/
+dump.rdb
 # Test and coverage files
 .tox/
 .nox/
 .coverage/
 .pytest_cache/
 
+poetry.lock
 # Log files
 *.log
-
+logs/
 .git/
 .mypy_cache/
 .pytest_cache/
