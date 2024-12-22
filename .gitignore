@@ -24,7 +24,6 @@ build/
 
 # IDE configuration directories (e.g., VSCode, PyCharm, etc.)
 .idea/
-.vscode/
 backups/
 dump.rdb
 # Test and coverage files

@@ -174,6 +174,7 @@ lint:
 	@echo "$(BLUE)📝 Formatting code...$(NC)"
 	$(call RUN, poetry run ruff format .)
 	$(call RUN, poetry run ruff check . --fix)
+	$(call RUN, poetry run pylint .)
 	@echo "$(GREEN)✓ Lint complete$(NC)"
 
 mypy:
@@ -332,10 +333,10 @@ db-reset: clean
 # =================================================================
 # Git Commands
 # =================================================================
-.PHONY: commit-push clean-git pre-commit-check commit-push-reset-install commit-push-reset
+.PHONY: commit-push clean-git pre-commit commit-push-reset-install commit-push-reset
 
 
-pre-commit-check: clean
+pre-commit: clean
 	@echo "$(BLUE)🔄 Running pre-commit checks...$(NC)"
 	$(call RUN, poetry lock --no-update)
 	$(call RUN, poetry run pre-commit run --all-files)
