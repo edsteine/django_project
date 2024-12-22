@@ -106,7 +106,6 @@ install-dev: check-tools clean
 # Update dependencies and tools
 update-dev: check-tools
 	@echo "$(BLUE)🔄 Updating dependencies...$(NC)"
-	$(call RUN, git config --global http.postBuffer 524288000)
 	$(call RUN, poetry lock --no-update)
 	$(call RUN, poetry check)
 	$(call RUN, poetry show --outdated)
@@ -338,7 +337,6 @@ db-reset: clean
 
 pre-commit-check: clean
 	@echo "$(BLUE)🔄 Running pre-commit checks...$(NC)"
-	$(call RUN, git config --global http.postBuffer 524288000)
 	$(call RUN, poetry lock --no-update)
 	$(call RUN, poetry run pre-commit run --all-files)
 	@echo "$(GREEN)✓ Pre-commit checks complete$(NC)"
@@ -360,7 +358,6 @@ commit-push-reset-install:clean install-dev lint
 commit-push-reset: lint
 	@echo "$(BLUE)🎯 Committing changes...$(NC)"
 	find . -type d -empty -exec touch {}/.gitkeep \;
-	$(call RUN, git config --global http.postBuffer 524288000)
 	$(call RUN, poetry lock --no-update)
 	$(call RUN, git init)
 	$(call RUN, git remote get-url origin || git remote add origin https://github.com/edsteine/django_project.git)
@@ -375,7 +372,6 @@ commit-push-reset: lint
 
 commit-push: lint
 	@echo "$(BLUE)📝 Committing and pushing changes...$(NC)"
-	$(call RUN, git config --global http.postBuffer 524288000)
 	$(call RUN, poetry lock --no-update)
 	$(call RUN, git add .)
 	$(call RUN, git commit -m "Update_$(TIMESTAMP)")
@@ -385,6 +381,8 @@ commit-push: lint
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
 
 clean-git: clean
+	pre-commit clean
+	pre-commit gc
 	git config --global http.postBuffer 1048576000
 	git gc --prune=now
 	git remote prune origin
