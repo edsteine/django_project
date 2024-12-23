@@ -27,8 +27,8 @@ logging.basicConfig(level=log_level)
 logger = logging.getLogger(__name__)
 
 # Load environment variables based on the environment
-# if environment == ENV_DEV:
-#     env_variables.read_env(overwrite=True)  # Load .env file for development environment
+if environment == ENV_DEV:
+    env_variables.read_env(overwrite=True)  # Load .env file for development environment
 
 # Fetch encryption settings from the environment
 ENCRYPTION_KEY: str = env_variables.str("ENCRYPTION_KEY")

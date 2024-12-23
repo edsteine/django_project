@@ -71,8 +71,9 @@ class EncryptedCharField(models.CharField):  # type: ignore
             raise ValueError("Decryption failed.") from e
 
 
-# TODO(Adel/2024-12-22): Implement in models  and test the usage of EncryptedCharField for sensitive data storage.
-# Ensure integration with Django's ORM and proper configuration.
+# TODO(Adel/2024-12-22): Implement the use of EncryptedCharField in models for storing sensitive data.
+# Ensure proper integration with Django's ORM and configuration.
+# No need to test this file directly; focus on testing models using EncryptedCharField.
 # 002
 # Example
 # from django.db import models

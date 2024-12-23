@@ -273,7 +273,6 @@
 
 # # CORS configuration
 # # CORS_ALLOWED_ORIGINS = env_variables.list("CORS_ALLOWED_ORIGINS", default=[])
-# CORS_ORIGIN_WHITELIST = env_variables.list("CORS_ORIGIN_WHITELIST", default=[])
 
 # # Reduce JWT access token lifetime for security
 # SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"] = timedelta(minutes=15)

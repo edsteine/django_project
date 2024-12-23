@@ -5,18 +5,19 @@ import sys
 from datetime import timedelta
 from pathlib import Path
 
+# import sentry_sdk
 import structlog
 
 from environ import Env  # type: ignore[import-untyped]
 
-# Initialize environment
+# from sentry_sdk.integrations.django import DjangoIntegration
 
 # Constants for environment types
 ENV_DEV = "dev"
 # Initialize the Env object to load and parse environment variables
 env_variables = Env()
 # Determine the environment (development or production)
-environment: str = env_variables("DJANGO_ENVIRONMENT") or ENV_DEV
+environment: str = env_variables.str("DJANGO_ENVIRONMENT") or ENV_DEV
 
 # Load environment variables based on the environment
 if environment == ENV_DEV:
@@ -39,7 +40,6 @@ required_env_vars: list[str] = [
     "ALLOWED_HOSTS",
     "INTERNAL_IPS",
     "CORS_ALLOWED_ORIGINS",
-    "CORS_ORIGIN_WHITELIST",
     "DB_ENGINE",
     "DB_NAME",
     "DB_USER",
@@ -54,14 +54,7 @@ required_env_vars: list[str] = [
     "EMAIL_USE_TLS",
     "EMAIL_HOST_USER",
     "EMAIL_HOST_PASSWORD",
-    "ENCRYPTION_KEY",
-    "ENCRYPTION_ALGORITHM",
     "SENTRY_DSN",
-    "AWS_STORAGE_BUCKET_NAME",
-    "AWS_S3_REGION_NAME",
-    "GITHUB_API_KEY",
-    "STRIPE_SECRET_KEY",
-    "SENDGRID_API_KEY",
     "LOGGING_LEVEL",
     "LOGGING_BACKEND",
     "SECURE_SSL_REDIRECT",
@@ -70,28 +63,34 @@ required_env_vars: list[str] = [
     "SECURE_HSTS_PRELOAD",
     "CSRF_COOKIE_SECURE",
     "SESSION_COOKIE_SECURE",
-    "DEFAULT_FILE_STORAGE",
-    "AWS_ACCESS_KEY_ID",
-    "AWS_SECRET_ACCESS_KEY",
-    "AWS_S3_CUSTOM_DOMAIN",
     "FEATURE_X_ENABLED",
-    "TESTING",
-    "ML_SERVICE_URL",
-    "GRAPHQL_ENDPOINT",
-    "AI_CHAT_SERVICE_URL",
-    "AI_CHAT_API_KEY",
-    "AI_CHAT_MODEL",
-    "CLAUDE_API_URL",
-    "CLAUDE_API_KEY",
-    "DATABASE_POOL_SIZE",
-    "DATABASE_MAX_CONNS",
-    "DJANGO_DEV_TOOLBAR",
     "CORS_ALLOW_ALL_ORIGINS",
     "CORS_ALLOW_CREDENTIALS",
     "USE_I18N",
     "USE_TZ",
     "ROTATE_REFRESH_TOKENS",
     "BLACKLIST_AFTER_ROTATION",
+    "ENCRYPTION_KEY",
+    "ENCRYPTION_ALGORITHM",
+    # "TESTING",
+    # "ML_SERVICE_URL",
+    # "GRAPHQL_ENDPOINT",
+    # "AI_CHAT_SERVICE_URL",
+    # "AI_CHAT_API_KEY",
+    # "AI_CHAT_MODEL",
+    # "CLAUDE_API_URL",
+    # "CLAUDE_API_KEY",
+    # "DATABASE_POOL_SIZE",
+    # "DATABASE_MAX_CONNS",
+    # "DEFAULT_FILE_STORAGE",
+    # "AWS_ACCESS_KEY_ID",
+    # "AWS_SECRET_ACCESS_KEY",
+    # "AWS_S3_CUSTOM_DOMAIN",
+    # "DJANGO_DEV_TOOLBAR",
+    # "AWS_STORAGE_BUCKET_NAME",
+    # "AWS_S3_REGION_NAME",
+    # "GITHUB_API_KEY",
+    # "SENDGRID_API_KEY",
 ]
 
 missing_vars: list[str] = []
@@ -107,16 +106,16 @@ if missing_vars:
     sys.exit(1)
 
 # Core Django Settings
-DEBUG = env_variables.bool("DJANGO_DEBUG") or True
-# LOGGING_LEVEL = env_variables.str("LOGGING_LEVEL") or "INFO")
-LOGGING_LEVEL = "INFO"
+DEBUG = env_variables.bool("DJANGO_DEBUG")
+LOGGING_LEVEL = env_variables.str("LOGGING_LEVEL")
+# LOGGING_LEVEL = "INFO"
 if LOGGING_LEVEL not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
     raise ValueError("Invalid LOGGING_LEVEL. Use DEBUG, INFO, WARNING, ERROR, or CRITICAL.")
 
-SECRET_KEY = env_variables("DJANGO_SECRET_KEY") or "django-insecure-dev-key-change-this"
+SECRET_KEY = env_variables.str("DJANGO_SECRET_KEY")
 
-ALLOWED_HOSTS = env_variables.list("ALLOWED_HOSTS") or ["localhost", "127.0.0.1"]
-INTERNAL_IPS = env_variables.list("INTERNAL_IPS") or ["127.0.0.1"]
+ALLOWED_HOSTS = env_variables.list("ALLOWED_HOSTS")
+INTERNAL_IPS = env_variables.list("INTERNAL_IPS")
 
 # Application definition
 INSTALLED_APPS = [
@@ -135,6 +134,7 @@ INSTALLED_APPS = [
     "drf_yasg",
     "silk",
     # Local apps
+    "api",
     "api.V1.resources.users",
 ]
 
@@ -158,15 +158,18 @@ AUTH_USER_MODEL = "users.User"
 # Database configuration
 DATABASES = {
     "default": {
-        "ENGINE": env_variables("DB_ENGINE") or "django.db.backends.postgresql",
-        "NAME": env_variables("DB_NAME") or "dev_db",
-        "USER": env_variables("DB_USER") or "postgres",
-        "PASSWORD": env_variables("DB_PASSWORD") or "postgres",
-        "HOST": env_variables("DB_HOST") or "localhost",
-        "PORT": env_variables("DB_PORT") or "5432",
+        "ENGINE": env_variables.str("DB_ENGINE"),
+        "NAME": env_variables.str("DB_NAME"),
+        "USER": env_variables.str("DB_USER"),
+        "PASSWORD": env_variables.str("DB_PASSWORD"),
+        "HOST": env_variables.str("DB_HOST"),
+        "PORT": env_variables.str("DB_PORT"),
         "CONN_MAX_AGE": 60,
         "OPTIONS": {
             "connect_timeout": 10,
+            # "MAX_CONNS": env_variables.int("DATABASE_MAX_CONNS"),
+            # "POOL_SIZE": env_variables.int("DATABASE_POOL_SIZE"),
+            # "CONN_MAX_AGE": 60,  # Optional, controls connection persistence
         },
         "SSL_REQUIRE": False,
     }
@@ -175,8 +178,8 @@ DATABASES = {
 # Cache settings
 CACHES = {
     "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": env_variables("REDIS_CACHE_URL") or "redis://127.0.0.1:6379/1",
+        "BACKEND": env_variables.str("CACHE_BACKEND"),
+        "LOCATION": env_variables.str("REDIS_CACHE_URL"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "SOCKET_CONNECT_TIMEOUT": 5,
@@ -187,7 +190,6 @@ CACHES = {
         },
     }
 }
-
 # Templates
 TEMPLATES = [
     {
@@ -207,10 +209,10 @@ TEMPLATES = [
 ]
 
 # Internationalization
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = env_variables("TIME_ZONE") or "UTC"
-USE_I18N = env_variables.bool("USE_I18N") or True
-USE_TZ = env_variables.bool("USE_TZ") or True
+LANGUAGE_CODE = env_variables.str("LANGUAGE_CODE")
+TIME_ZONE = env_variables.str("TIME_ZONE")
+USE_I18N = env_variables.bool("USE_I18N")
+USE_TZ = env_variables.bool("USE_TZ")
 
 # Static files
 STATIC_URL = "static/"
@@ -222,16 +224,15 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # Development security settings
 
-SECURE_HSTS_SECONDS = env_variables("SECURE_HSTS_SECONDS") or 31536000
-SECURE_HSTS_INCLUDE_SUBDOMAINS = env_variables.bool("SECURE_HSTS_INCLUDE_SUBDOMAINS") or False
-SECURE_HSTS_PRELOAD = env_variables.bool("SECURE_HSTS_PRELOAD") or False
-SECURE_SSL_REDIRECT = env_variables.bool("SECURE_SSL_REDIRECT") or False
-SESSION_COOKIE_SECURE = env_variables.bool("SESSION_COOKIE_SECURE") or False
-CSRF_COOKIE_SECURE = env_variables.bool("CSRF_COOKIE_SECURE") or False
-CORS_ALLOW_ALL_ORIGINS = env_variables.bool("CORS_ALLOW_ALL_ORIGINS") or True
-CORS_ALLOW_CREDENTIALS = env_variables.bool("CORS_ALLOW_CREDENTIALS") or True
-CORS_ALLOWED_ORIGINS = env_variables.list("CORS_ALLOWED_ORIGINS") or ["http://localhost:3000", "http://127.0.0.1:3000"]
-
+SECURE_HSTS_SECONDS = env_variables.str("SECURE_HSTS_SECONDS")
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_variables.bool("SECURE_HSTS_INCLUDE_SUBDOMAINS")
+SECURE_HSTS_PRELOAD = env_variables.bool("SECURE_HSTS_PRELOAD")
+SECURE_SSL_REDIRECT = env_variables.bool("SECURE_SSL_REDIRECT")
+SESSION_COOKIE_SECURE = env_variables.bool("SESSION_COOKIE_SECURE")
+CSRF_COOKIE_SECURE = env_variables.bool("CSRF_COOKIE_SECURE")
+CORS_ALLOW_ALL_ORIGINS = env_variables.bool("CORS_ALLOW_ALL_ORIGINS")
+CORS_ALLOW_CREDENTIALS = env_variables.bool("CORS_ALLOW_CREDENTIALS")
+CORS_ALLOWED_ORIGINS = env_variables.list("CORS_ALLOWED_ORIGINS")
 # REST Framework settings
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
@@ -249,20 +250,20 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "ROTATE_REFRESH_TOKENS": env_variables.bool("ROTATE_REFRESH_TOKENS") or True,
-    "BLACKLIST_AFTER_ROTATION": env_variables.bool("BLACKLIST_AFTER_ROTATION") or True,
+    "ROTATE_REFRESH_TOKENS": env_variables.bool("ROTATE_REFRESH_TOKENS"),
+    "BLACKLIST_AFTER_ROTATION": env_variables.bool("BLACKLIST_AFTER_ROTATION"),
     "AUTH_HEADER_TYPES": ("Bearer",),
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
 }
 
 # Email settings
-EMAIL_BACKEND = env_variables("EMAIL_BACKEND") or "django.core.mail.backends.console.EmailBackend"
-EMAIL_HOST = env_variables("EMAIL_HOST") or "localhost"
-EMAIL_PORT = env_variables.int("EMAIL_PORT") or 1025
-EMAIL_HOST_USER = env_variables("EMAIL_HOST_USER") or ""
-EMAIL_HOST_PASSWORD = env_variables("EMAIL_HOST_PASSWORD") or ""
-EMAIL_USE_TLS = env_variables.bool("EMAIL_USE_TLS") or False
+EMAIL_BACKEND = env_variables.str("EMAIL_BACKEND")
+EMAIL_HOST = env_variables.str("EMAIL_HOST")
+EMAIL_PORT = env_variables.int("EMAIL_PORT")
+EMAIL_HOST_USER = env_variables.str("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = env_variables.str("EMAIL_HOST_PASSWORD")
+EMAIL_USE_TLS = env_variables.bool("EMAIL_USE_TLS")
 
 # Structlog configuration
 log_renderer = structlog.dev.ConsoleRenderer() if DEBUG else structlog.processors.JSONRenderer()
@@ -306,7 +307,7 @@ LOGGING = {
         },
         "mail_admins": {
             "level": "ERROR",
-            "class": "django.utils.log.AdminEmailHandler",
+            "class": env_variables.str("LOGGING_BACKEND"),
         },
         "file": {
             "level": LOGGING_LEVEL,
@@ -324,7 +325,7 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["console", "file"],
-            "level": env_variables("LOGGING_LEVEL") or "INFO",
+            "level": LOGGING_LEVEL,
             "propagate": False,
         },
         "django.db.backends": {
@@ -365,10 +366,11 @@ ADMINS = [("Admin Name", "admin@example.com")]
 
 # Feature Flags
 
-FEATURE_X_ENABLED = env_variables.bool("FEATURE_X_ENABLED") or False
+FEATURE_X_ENABLED = env_variables.bool("FEATURE_X_ENABLED")
 
 
-# Testing & Coverage
-TESTING = env_variables.bool("TESTING") or True
-if TESTING:
-    DATABASES["default"] = {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}
+# sentry_sdk.init(
+#     dsn=env_variables.str("SENTRY_DSN"),
+#     integrations=[DjangoIntegration()],
+#     traces_sample_rate=1.0,  # Adjust as needed for performance tracking
+# )

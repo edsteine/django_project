@@ -248,3 +248,8 @@
 
 # # Logging setup for testing (usually DEBUG or INFO)
 # LOGGING = get_logging_config(log_level="DEBUG")
+
+# Testing & Coverage
+# TESTING = env_variables.bool("TESTING") or True
+# if TESTING:
+#     DATABASES["default"] = {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}

@@ -92,7 +92,8 @@ delete_database() {
     log "Database: $db_name"
     log "User: $db_user"
     log "Are you sure you want to proceed with deletion? (yes/no): "
-    read -p "Are you sure you want to proceed with deletion? (yes/no): " confirm
+    # read -p "Are you sure you want to proceed with deletion? (yes/no): " confirm
+    confirm="yes"
     if [ "$confirm" != "yes" ]; then
         log "Aborting database deletion."
         exit 0

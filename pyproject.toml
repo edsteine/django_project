@@ -372,3 +372,7 @@ disable = [
 ] # Disable specific warnings (like missing docstrings)
 enable = ["E1101"] # Enable specific warnings
 good-names = ["i", "j", "k", "ex", "Run", "sys"] # Allow these variable names
+
+
+[tool.pylint.MASTER]
+init-hook = "import sys; sys.path.append('.')"

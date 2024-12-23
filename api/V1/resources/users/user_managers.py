@@ -34,16 +34,7 @@ class CustomUserManager(BaseUserManager[T]):
 
     def get_by_natural_key(self, username: str | None = None) -> T:
         """
-        Retrieve a user by their natural key (email).
-
-        Args:
-            username (str | None, optional): The email address of the user.
-
-        Returns:
-            UserProtocol: The user with the matching email.
-
-        Raises:
-            ValueError: If no username is provided.
+        Retrieve a user by their natural key (email).a
         """
         if username is None:
             raise ValueError(_("Username/Email is required"))

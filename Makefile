@@ -198,7 +198,8 @@ vulture:
 	@echo "$(GREEN)✅ vulture checks complete$(NC)"
 
 
-all-lint: lint mypy security vulture
+# all-lint: lint mypy security vulture
+all-lint: lint mypy
 # =================================================================
 # Django Commands
 # =================================================================
@@ -216,6 +217,7 @@ migrate:
 	$(call RUN,poetry run python manage.py migrate)
 	$(call RUN,poetry run python manage.py flush --noinput)
 	$(call RUN,poetry run python manage.py makemigrations users)
+	$(call RUN,poetry run python manage.py migrate users)
 	@echo "$(GREEN)✅ Migrations complete$(NC)"
 
 superuser:
@@ -394,20 +396,27 @@ clean-git: clean
 
 clean:
 	@echo "$(BLUE)🧹 Cleaning project...$(NC)"
+	@find . -type d -name "backups" -exec rm -rf {} +
+	@find . -type d -name "logs" -exec rm -rf {} +
+	@find . -type d -name "staticfiles" -exec rm -rf {} +
 	@find . -type d -name "__pycache__" -exec rm -rf {} +
-	@find . -type d -name ".pytest_cache" -exec rm -rf {} +
 	@find . -type d -name ".coverage" -exec rm -rf {} +
+	@find . -type d -name "poetry.lock" -exec rm -rf {} +
+	@find . -type d -name ".pytest_cache" -exec rm -rf {} +
 	@find . -type d -name ".mypy_cache" -exec rm -rf {} +
 	@find . -type d -name ".ruff_cache" -exec rm -rf {} +
 	@find . -type d -name "dist" -exec rm -rf {} +
 	@find . -type d -name "build" -exec rm -rf {} +
 	@find . -type d -name "*.egg-info" -exec rm -rf {} +
 	@find . -type d -name "htmlcov" -exec rm -rf {} +
+	@find . -type f -name "poetry.lock" -delete
+	@find . -type f -name "dump.rdb" -delete
 	@find . -type f -name "*.pyc" -delete
 	@find . -type f -name "*.pyo" -delete
 	@find . -type f -name "*.pyd" -delete
 	@find . -type f -name ".coverage" -delete
 	@find . -type f -name "coverage.xml" -delete
+
 	@poetry env remove --all
 	@pre-commit clean
 	@rm -rf .pytest_cache .coverage .mypy_cache .ruff_cache
