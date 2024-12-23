@@ -1,5 +1,4 @@
 import logging
-import os
 import re
 
 from datetime import UTC, datetime
@@ -11,11 +10,16 @@ log_level = logging.INFO
 logging.basicConfig(level=log_level)
 logger = logging.getLogger(__name__)
 
+script_dir = Path(__file__).resolve().parent
+
 
 def generate_todo_id() -> str:
     try:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        todos_path = os.path.join(script_dir, "TODOS.md")
+        # script_dir = os.path.dirname(os.path.abspath(__file__))
+        # todos_path = os.path.join(script_dir, "TODOS.md")
+        # current_dir = Path.cwd()
+
+        todos_path = script_dir / "TODOS.md"  # Path to TODOS.md in the working directory
 
         # Open and read the file
         with open(todos_path, encoding="utf-8") as file:
@@ -71,7 +75,7 @@ Latest TODO ID: T000
 """
 
     content += "\n## Completed\n"
-    Path("TODOS.md").write_text(content, encoding="utf-8")
+    Path(script_dir, "TODOS.md").write_text(content, encoding="utf-8")
     return content
 
 

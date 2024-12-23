@@ -32,7 +32,7 @@ def main() -> None:
 
     """
     # TODO(Adel/2024-12-22): Don't forget about using config.
-    # 003
+    # 001
     # # Specify custom .env location
     # config = Config(RepositoryEnv('.env'))
     # DEBUG = config('DEBUG', default=False, cast=bool)

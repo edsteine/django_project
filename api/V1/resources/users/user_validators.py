@@ -2,12 +2,10 @@ import re
 
 from typing import Any
 
-import phonenumbers
-
+from api.core.utils.core_constants import MIN_PASSWORD_LENGTH
+from api.core.utils.core_validators import validate_email, validate_phone
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-
-MIN_PASSWORD_LENGTH = 8
 
 
 class UserDataValidator:
@@ -29,16 +27,6 @@ class UserDataValidator:
         if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
             raise ValidationError(_("Password must contain at least one special character"))
 
-    @staticmethod
-    def validate_phone(phone: str) -> None:
-        """Validate phone number format"""
-        try:
-            phone_number = phonenumbers.parse(phone)
-            if not phonenumbers.is_valid_number(phone_number):
-                raise ValidationError(_("Invalid phone number format"))
-        except phonenumbers.phonenumberutil.NumberParseException as err:
-            raise ValidationError(_("Invalid phone number format")) from err
-
     @classmethod
     def validate_user_data(cls, data: dict[str, Any]) -> dict[str, Any]:
         """Validate all user data"""
@@ -46,7 +34,9 @@ class UserDataValidator:
             cls.validate_password(data["password"])
 
         if data.get("phone"):
-            cls.validate_phone(data["phone"])
+            validate_phone(data["phone"])
+        if data.get("email"):
+            validate_email(data["email"])
 
         # You can add more validation logic here for other fields (e.g., email, etc.)
 

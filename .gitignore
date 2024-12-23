@@ -31,7 +31,6 @@ dump.rdb
 .nox/
 .coverage/
 .pytest_cache/
-
 poetry.lock
 # Log files
 *.log

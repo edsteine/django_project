@@ -11,6 +11,7 @@ Used Libraries: cryptography.fernet, django.db
 import logging
 
 from api.core.encryption.encryption_config import ENCRYPTION_KEY
+from api.core.utils.core_constants import ENCRYPTION_KEY_LENGTH
 from cryptography.fernet import Fernet, InvalidToken
 from django.db import models
 from django.db.backends.base.base import BaseDatabaseWrapper
@@ -18,7 +19,6 @@ from django.db.models import Model
 
 # Set up logging
 logger = logging.getLogger(__name__)
-ENCRYPTION_KEY_LENGTH = 44
 
 
 class EncryptedCharField(models.CharField):  # type: ignore
@@ -71,9 +71,12 @@ class EncryptedCharField(models.CharField):  # type: ignore
             raise ValueError("Decryption failed.") from e
 
 
+# TODO(Adel/2024-12-22): Implement in models  and test the usage of EncryptedCharField for sensitive data storage.
+# Ensure integration with Django's ORM and proper configuration.
+# 002
+# Example
 # from django.db import models
 # from api.core.encryption.encryption_fields import EncryptedCharField
-
 # class User(models.Model):
 #     username = models.CharField(max_length=100)
 #     api_key = EncryptedCharField(max_length=255)

@@ -27,21 +27,29 @@ logging.basicConfig(level=log_level)
 logger = logging.getLogger(__name__)
 
 # Load environment variables based on the environment
-if environment == ENV_DEV:
-    env_variables.read_env(overwrite=True)  # Load .env file for development environment
+# if environment == ENV_DEV:
+#     env_variables.read_env(overwrite=True)  # Load .env file for development environment
 
 # Fetch encryption settings from the environment
 ENCRYPTION_KEY: str = env_variables.str("ENCRYPTION_KEY")
 ENCRYPTION_ALGORITHM: str = env_variables.str("ENCRYPTION_ALGORITHM")
 
-# Validate encryption settings
-try:
-    if not ENCRYPTION_KEY:
-        raise ValueError(f"No encryption key found in {environment} environment.")
-    if not ENCRYPTION_ALGORITHM:
-        raise ValueError(f"No encryption algorithm found in {environment} environment.")
-    logger.info("%s encryption settings are securely configured.", environment.capitalize())
-except ValueError as e:
-    # logger.error(f"Configuration Error: {e}")
-    logger.info("Configuration Error: %s", e)
-    raise  # Ensure invalid settings stop the application
+
+# Validation and logging should only occur during initialization
+def validate_encryption_settings() -> None:
+    if ENCRYPTION_KEY and ENCRYPTION_ALGORITHM:
+        logger.info("%s encryption settings are securely configured.", environment.capitalize())
+    else:
+        if not ENCRYPTION_KEY:
+            logger.error("Missing encryption key in %s environment.", environment)
+        if not ENCRYPTION_ALGORITHM:
+            logger.error("Missing encryption algorithm in %s environment.", environment)
+        raise ValueError("Encryption settings are missing or invalid.")
+
+
+# Call validation once during initialization
+validate_encryption_settings()
+
+
+# TODO(Adel/2024-12-22): Do only Unit Test for this.
+# 001
