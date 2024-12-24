@@ -210,7 +210,7 @@ status:
 	$(call RUN, poetry run python manage.py showmigrations)
 	@echo "$(GREEN)✓ Migration status check complete$(NC)"
 
-migrate:
+migrate-reset:
 	@echo "$(BLUE)🔄 Running database migrations...$(NC)"
 	@echo "$(BLUE)Making migrations...$(NC)"
 	$(call RUN,poetry run python manage.py makemigrations)
@@ -219,7 +219,15 @@ migrate:
 	$(call RUN,poetry run python manage.py makemigrations users)
 	$(call RUN,poetry run python manage.py migrate users)
 	@echo "$(GREEN)✅ Migrations complete$(NC)"
-
+show_urls:
+	@echo "$(BLUE)🔄 show_urls...$(NC)"
+	python manage.py show_urls
+migrate:
+	@echo "$(BLUE)🔄 Running database migrations...$(NC)"
+	@echo "$(BLUE)Making migrations...$(NC)"
+	$(call RUN,poetry run python manage.py makemigrations)
+	$(call RUN,poetry run python manage.py migrate)
+	@echo "$(GREEN)✅ Migrations complete$(NC)"
 superuser:
 	@echo "$(BLUE)👤 Creating superuser...$(NC)"
 	$(call RUN,poetry run python manage.py createsuperuser)
@@ -228,6 +236,10 @@ superuser:
 runserver:
 	@echo "$(BLUE)🚀 Starting development server...$(NC)"
 	$(call RUN,poetry run python manage.py runserver)
+ssl:
+	@echo "$(BLUE)🚀 Starting development server...$(NC)"
+	$(call RUN,python manage.py runserver_plus 0.0.0.0:8000 --cert-file certs/localhost.crt --key-file certs/localhost.key)
+
 
 shell:
 	@echo "$(BLUE)🐚 Starting Django shell...$(NC)"
@@ -327,7 +339,7 @@ db-reset: clean
 	chmod +x ./scripts/dev/dev_database_create.sh
 	./scripts/dev/dev_database_delete.sh
 	./scripts/dev/dev_database_create.sh
-	make migrate
+	make migrate-reset
 	make superuser
 	@echo "$(GREEN)✅ Database reset complete$(NC)"
 
@@ -373,8 +385,9 @@ commit-push-reset: lint
 	@echo "$(GREEN)✅ Changes pushed$(NC)"
 
 
-commit-push: lint
+commit:
 	@echo "$(BLUE)📝 Committing and pushing changes...$(NC)"
+	$(call RUN,git add .gitignore)
 	$(call RUN, poetry lock --no-update)
 	$(call RUN, git add .)
 	$(call RUN, git commit -m "Update_$(TIMESTAMP)")

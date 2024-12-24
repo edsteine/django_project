@@ -40,13 +40,14 @@ def main() -> None:
     # Initialize the Env object to load and parse environment variables
     env_variables = Env()
     # Determine the environment (development or production)
-    environment: str = env_variables("DJANGO_ENVIRONMENT") or ENV_DEV
+    # environment: str = env_variables("DJANGO_ENVIRONMENT") or ENV_DEV
+    environment: str = env_variables.str("DJANGO_ENVIRONMENT", default=ENV_DEV)
 
     # Load environment variables based on the environment
     if environment == ENV_DEV:
         env_variables.read_env(overwrite=True)  # Load .env file for development environment
 
-    settings_module: str = env_variables.str("DJANGO_SETTINGS_MODULE") or "config_project.settings.dev_config"
+    settings_module: str = env_variables.str("DJANGO_SETTINGS_MODULE", default="config_project.settings.dev_config")
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", settings_module)
 
     try:

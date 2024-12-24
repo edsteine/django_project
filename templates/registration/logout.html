@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ title }}</h1>
+        <p>You have successfully logged out.</p>
+        {% if site_name %}
+            <p>Visit our site: <a href="https://{{ site.domain }}">{{ site_name }}</a></p>
+        {% endif %}
+        <p><a href="{% url 'login' %}">Click here to log in again</a></p>
+    </div>
+</body>
+</html>

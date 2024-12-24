@@ -24,11 +24,13 @@ MIN_PASSWORD_LENGTH = 8  # Minimum length for user passwords
 
 API_VERSION: str = "v1"
 API_HOST: str = "api.example.com"
-
-
-def get_api_version() -> str:
-    """Returns the current API version."""
-    return API_VERSION
+TITLE = "Ed Project Api"
+DESCRIPTION = """ED Project is a comprehensive Django REST API framework designed for robust,
+secure, and scalable web applications. Built with modern Python development practices,
+this project provides a solid foundation for building enterprise-grade web services.",
+terms_of_service="https://www.google.com/policies/terms/"""
+CONTACT = "a.ajdaa@outlook.com"
+LICENSE = "BSD License"
 
 
 def generate_api_key(user: str) -> str:

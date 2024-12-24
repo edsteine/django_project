@@ -19,7 +19,7 @@ def generate_todo_id() -> str:
         # todos_path = os.path.join(script_dir, "TODOS.md")
         # current_dir = Path.cwd()
 
-        todos_path = script_dir / "TODOS.md"  # Path to TODOS.md in the working directory
+        todos_path = "TODOS.md"  # Path to TODOS.md in the working directory
 
         # Open and read the file
         with open(todos_path, encoding="utf-8") as file:

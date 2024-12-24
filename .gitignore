@@ -21,7 +21,7 @@ coverage.xml
 dist/
 build/
 *.egg-info/
-
+certs/
 # IDE configuration directories (e.g., VSCode, PyCharm, etc.)
 .idea/
 backups/
@@ -45,3 +45,5 @@ staticfiles/
 # Temporary files
 *.bak
 *.swp
+localhost.key
+certs/localhost.key

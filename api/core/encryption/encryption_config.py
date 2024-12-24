@@ -19,7 +19,8 @@ ENV_DEV = "dev"
 env_variables = Env()
 
 # Determine the environment (development or production)
-environment: str = env_variables("DJANGO_ENVIRONMENT") or ENV_DEV
+# environment: str = env_variables("DJANGO_ENVIRONMENT") or ENV_DEV
+environment: str = env_variables.str("DJANGO_ENVIRONMENT", default=ENV_DEV)
 
 # Configure logging based on environment
 log_level = logging.INFO if environment == ENV_DEV else logging.ERROR
@@ -48,6 +49,7 @@ def validate_encryption_settings() -> None:
 
 
 # Call validation once during initialization
+# @must_be_tested
 validate_encryption_settings()
 
 

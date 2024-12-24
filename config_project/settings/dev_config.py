@@ -2,8 +2,10 @@ import logging
 import os
 import sys
 
+from collections.abc import Callable, MutableMapping
 from datetime import timedelta
 from pathlib import Path
+from typing import Any
 
 # import sentry_sdk
 import structlog
@@ -17,10 +19,11 @@ ENV_DEV = "dev"
 # Initialize the Env object to load and parse environment variables
 env_variables = Env()
 # Determine the environment (development or production)
-environment: str = env_variables.str("DJANGO_ENVIRONMENT") or ENV_DEV
+ENVIRONMENT: str = env_variables.str("DJANGO_ENVIRONMENT", default=ENV_DEV)
+# ENVIRONMENT: str = env_variables.str("DJANGO_ENVIRONMENT") or ENV_DEV
 
 # Load environment variables based on the environment
-if environment == ENV_DEV:
+if ENVIRONMENT == ENV_DEV:
     env_variables.read_env(overwrite=True)  # Load .env file for development environment
 
 # Base directory setup
@@ -106,9 +109,10 @@ if missing_vars:
     sys.exit(1)
 
 # Core Django Settings
-DEBUG = env_variables.bool("DJANGO_DEBUG")
-LOGGING_LEVEL = env_variables.str("LOGGING_LEVEL")
-# LOGGING_LEVEL = "INFO"
+# DEBUG = env_variables.bool("DJANGO_DEBUG")
+DEBUG = True
+# LOGGING_LEVEL = env_variables.str("LOGGING_LEVEL")
+LOGGING_LEVEL = "INFO"
 if LOGGING_LEVEL not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
     raise ValueError("Invalid LOGGING_LEVEL. Use DEBUG, INFO, WARNING, ERROR, or CRITICAL.")
 
@@ -116,7 +120,6 @@ SECRET_KEY = env_variables.str("DJANGO_SECRET_KEY")
 
 ALLOWED_HOSTS = env_variables.list("ALLOWED_HOSTS")
 INTERNAL_IPS = env_variables.list("INTERNAL_IPS")
-
 # Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -133,6 +136,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "drf_yasg",
     "silk",
+    # "sslserver",
     # Local apps
     "api",
     "api.V1.resources.users",
@@ -190,11 +194,11 @@ CACHES = {
         },
     }
 }
-# Templates
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, "templates")],  # Adjust this path
+        # "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -203,6 +207,10 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
+            # "loaders": [
+            #     "django.template.loaders.filesystem.Loader",
+            #     "django.template.loaders.app_directories.Loader",
+            # ],
             "debug": DEBUG,
         },
     },
@@ -216,9 +224,8 @@ USE_TZ = env_variables.bool("USE_TZ")
 
 # Static files
 STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "assets"]
-
+STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -235,7 +242,10 @@ CORS_ALLOW_CREDENTIALS = env_variables.bool("CORS_ALLOW_CREDENTIALS")
 CORS_ALLOWED_ORIGINS = env_variables.list("CORS_ALLOWED_ORIGINS")
 # REST Framework settings
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
@@ -245,6 +255,13 @@ REST_FRAMEWORK = {
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+]
+# LOGIN_URL = "/accounts/login/"  # Correct setting for login redirect
+LOGIN_URL = "/admin/login/"
+LOGIN_REDIRECT_URL = "/"  # Optional: After login, redirect to home page
+
 
 # JWT settings
 SIMPLE_JWT = {
@@ -265,26 +282,29 @@ EMAIL_HOST_USER = env_variables.str("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = env_variables.str("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = env_variables.bool("EMAIL_USE_TLS")
 
-# Structlog configuration
+base_processors: list[Callable[[Any, str, MutableMapping[str, Any]], Any]] = [
+    structlog.contextvars.merge_contextvars,
+    structlog.processors.add_log_level,
+    structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+    structlog.processors.TimeStamper(fmt="iso"),
+]
+
 log_renderer = structlog.dev.ConsoleRenderer() if DEBUG else structlog.processors.JSONRenderer()
 
+processors = [*base_processors, log_renderer]
+
+if DEBUG:
+    processors.extend([structlog.dev.ConsoleRenderer(colors=True)])
+else:
+    processors.extend([structlog.processors.dict_tracebacks, structlog.processors.JSONRenderer()])
+
 structlog.configure(
-    processors=[
-        structlog.contextvars.merge_contextvars,
-        structlog.stdlib.add_logger_name,
-        structlog.stdlib.add_log_level,
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
-        log_renderer,
-    ],
-    context_class=dict,
+    processors=processors,
     logger_factory=structlog.stdlib.LoggerFactory(),
-    wrapper_class=structlog.stdlib.BoundLogger,
     cache_logger_on_first_use=True,
+    wrapper_class=structlog.stdlib.BoundLogger,
 )
 
-# Logging configuration
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -301,21 +321,21 @@ LOGGING = {
     },
     "handlers": {
         "console": {
-            "level": LOGGING_LEVEL,
             "class": "logging.StreamHandler",
             "formatter": "structlog",
-        },
-        "mail_admins": {
-            "level": "ERROR",
-            "class": env_variables.str("LOGGING_BACKEND"),
+            "level": LOGGING_LEVEL,
         },
         "file": {
-            "level": LOGGING_LEVEL,
             "class": "logging.handlers.RotatingFileHandler",
-            "filename": LOGS_DIR / "django-dev.log",
-            "maxBytes": 10 * 1024 * 1024,  # 10MB
+            "filename": LOGS_DIR / f"django-{ENVIRONMENT}.log",
+            "maxBytes": 10_485_760,
             "backupCount": 5,
             "formatter": "structlog",
+            "level": LOGGING_LEVEL,
+        },
+        "mail_admins": {
+            "class": env_variables.str("LOGGING_BACKEND"),
+            "level": "ERROR",
         },
     },
     "root": {
@@ -328,19 +348,22 @@ LOGGING = {
             "level": LOGGING_LEVEL,
             "propagate": False,
         },
+        "django.db": {
+            "level": "INFO",
+            "propagate": True,
+        },
+        "django.request": {
+            "handlers": ["console", "mail_admins"],
+            "level": "ERROR",
+            "propagate": False,
+        },
         "django.db.backends": {
             "handlers": ["console"],
             "level": LOGGING_LEVEL,
             "propagate": False,
         },
-        "django.request": {
-            "handlers": ["mail_admins"],
-            "level": "ERROR",
-            "propagate": True,
-        },
     },
 }
-
 # Debug Toolbar settings
 DEBUG_TOOLBAR_CONFIG = {
     "SHOW_TOOLBAR_CALLBACK": lambda request: True,
@@ -369,6 +392,27 @@ ADMINS = [("Admin Name", "admin@example.com")]
 FEATURE_X_ENABLED = env_variables.bool("FEATURE_X_ENABLED")
 
 
+SWAGGER_SETTINGS = {
+    # "DOC_EXPANSION": "list",
+    # "APIS_SORTER": "alpha",
+    "USE_SESSION_AUTH": True,
+    "SECURITY_DEFINITIONS": {
+        "basic": {
+            "type": "basic",
+        },
+    },
+    # "SECURITY_DEFINITIONS": {
+    #     "Bearer": {
+    #         "type": "apiKey",
+    #         "name": "Authorization",
+    #         "in": "header",
+    #     }
+    # },
+    "SECURITY": [{"Bearer": []}],
+    "LOGIN_URL": "/login/",
+    "LOGOUT_URL": "/logout/",
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+}
 # sentry_sdk.init(
 #     dsn=env_variables.str("SENTRY_DSN"),
 #     integrations=[DjangoIntegration()],
