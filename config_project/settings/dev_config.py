@@ -223,9 +223,9 @@ USE_I18N = env_variables.bool("USE_I18N")
 USE_TZ = env_variables.bool("USE_TZ")
 
 # Static files
-STATIC_URL = "static/"
-STATICFILES_DIRS = [BASE_DIR / "assets"]
-STATIC_ROOT = BASE_DIR / "staticfiles"
+# STATIC_URL = "static/"
+# STATICFILES_DIRS = [BASE_DIR / "assets"]
+# STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
